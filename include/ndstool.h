@@ -19,7 +19,7 @@
 struct unsigned_int
 {
 	unsigned int i;
-	#if defined(BIG_ENDIAN)
+	#if __BYTE_ORDER == __BIG_ENDIAN
 		operator unsigned int () { return i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
 		unsigned int & operator = (unsigned int i) { return this->i = i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
 	#else
@@ -30,10 +30,11 @@ struct unsigned_int
 	unsigned_int(unsigned int i) { *this = i; }
 };
 
+
 struct unsigned_short
 {
 	unsigned short i;
-	#if defined(BIG_ENDIAN)
+	#if __BYTE_ORDER == __BIG_ENDIAN
 		operator unsigned short () { return i>>8 | i<<8; }
 		unsigned short & operator = (unsigned short i) { return this->i = i>>8 | i<<8; }
 	#else
