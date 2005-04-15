@@ -179,6 +179,14 @@ unsigned short CalcSecureAreaCRC();
 void FixHeaderCRC(char *ndsfilename);
 void Create();
 
+void ExtractFile(char *filename, unsigned int file_id);
+void ExtractDirectory(char *prefix, unsigned int dir_id);
+void ExtractFiles();
+void Extract(char *outfilename, bool indirect_offset, unsigned int offset, bool indirect_size, unsigned size);
+
+
+
+
 
 
 
