@@ -37,15 +37,17 @@ LDFLAGS	=	$(DEBUGFLAGS) -Wl,-Map,$(TARGET).map
 UNAME := $(shell uname -s)
 
 ifneq (,$(findstring MINGW,$(UNAME)))
-	PLATFORM	:=	win32
+	PLATFORM	:= win32
 	EXEEXT		:= .exe
-	BINARY_FMT	:=	pe-i386
-	BINARY_ARCH	:=	i386
+	BINARY_FMT	:= pe-i386
+	BINARY_ARCH	:= i386
+	LABEL_PREFIX	:= _
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
 	PLATFORM	:=	linux
 	EXEEXT		:=
+	LABEL_PREFIX	:=
 	BINARY_FMT	:=	elf32-i386
 	BINARY_ARCH	:=	i386
 endif
@@ -168,9 +170,9 @@ define bin2o
 	cp $(<) $(*).tmp
 	$(OBJCOPY) -I binary -O $(BINARY_FMT) -B $(BINARY_ARCH) \
 	--rename-section .data=.rodata,readonly,data,contents,alloc \
-	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_start=`(echo _$(*) | tr . _)`\
-	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_end=`(echo _$(*) | tr . _)`_end\
-	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_size=`(echo _$(*) | tr . _)`_size\
+	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_start=`(echo $(LABEL_PREFIX)$(*) | tr . _)`\
+	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_end=`(echo $(LABEL_PREFIX)$(*) | tr . _)`_end\
+	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_size=`(echo $(LABEL_PREFIX)$(*) | tr . _)`_size\
 	$(*).tmp $(@)
 	echo "extern const u32" `(echo $(*) | tr . _)`"_end[];" >> $(*).h
 	echo "extern const u8" `(echo $(*) | tr . _)`"[];" >> $(*).h
