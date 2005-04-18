@@ -9,11 +9,15 @@
 
 #pragma pack(1)
 
-#define VER			"1.08"
+#define VER			"1.09"
 
 #ifndef __MINGW32__
 #define MAX_PATH	2048
 #endif
+
+typedef	unsigned char			u8;
+typedef	unsigned short int		u16;
+typedef	unsigned int			u32;
 
 
 struct unsigned_int

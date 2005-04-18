@@ -11,6 +11,12 @@
 #include "ndstool.h"
 #include "raster.h"
 
+extern "C" {
+
+#include "default_arm7.h"
+
+}
+
 /*
  * Variables
  */
@@ -415,29 +421,30 @@ void Create()
 		header.arm9_size = 0;
 	}
 
+	header.arm7_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
+	//header.arm7_rom_offset = header.arm7_rom_offset;		// ******************
+	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
+
+	unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = 0x02380000;
+	unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = 0x02380000;
+	unsigned int size = 0;
+
 	// ARM7 binary
 	if (arm7filename)
 	{
-		header.arm7_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
-		//header.arm7_rom_offset = header.arm7_rom_offset;		// ******************
-		fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
-		unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = 0x02380000;
-		unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = 0x02380000;
-		unsigned int size = 0;
 		if (HasElfExtension(arm7filename))
 			CopyFromElf(arm7filename, &entry_address, &ram_address, &size);
 		else
 			CopyFromBin(arm7filename, &size);
-		header.arm7_entry_address = entry_address;
-		header.arm7_ram_address = ram_address;
-		header.arm7_size = size;
 	}
 	else
 	{
-		header.arm7_entry_address = 0;
-		header.arm7_ram_address = 0;
-		header.arm7_size = 0;
+		fwrite(default_arm7,(u32)default_arm7_size,1,fNDS);
 	}
+
+	header.arm7_entry_address = entry_address;
+	header.arm7_ram_address = ram_address;
+	header.arm7_size = size;
 	
 	// icon/title
 	if (icontitlefilename)

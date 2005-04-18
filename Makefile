@@ -22,6 +22,7 @@ TARGET		:=	ndstool
 BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
+DATA		:=	data
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -31,14 +32,24 @@ CFLAGS	:=	$(DEBUGFLAGS) -Wall -O0\
 
 CFLAGS	+=	$(INCLUDE)
 
-LDFLAGS	=	$(DEBUGFLAGS) -Wl,-Map,$(notdir $@).map
+LDFLAGS	=	$(DEBUGFLAGS) -Wl,-Map,$(TARGET).map
 
 UNAME := $(shell uname -s)
 
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM	:=	win32
 	EXEEXT		:= .exe
+	BINARY_FMT	:=	pe-i386
+	BINARY_ARCH	:=	i386
 endif
+
+ifneq (,$(findstring Linux,$(UNAME)))
+	PLATFORM	:=	linux
+	EXEEXT		:=
+	BINARY_FMT	:=	elf32-i386
+	BINARY_ARCH	:=	i386
+endif
+
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
@@ -60,7 +71,8 @@ ifneq ($(BUILD),$(notdir $(CURDIR)))
 
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
+export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
+					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
 
 export CC		:=	$(PREFIX)gcc
 export CXX		:=	$(PREFIX)g++
@@ -73,8 +85,10 @@ export OBJCOPY	:=	$(PREFIX)objcopy
 CFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+BINFILES		:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
+BMPFILES		:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bmp)))
 
-export OFILES	:= $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
+export OFILES	:= $(BINFILES:.bin=.o) $(BMPFILES:.bmp=.o)  $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
 #---------------------------------------------------------------------------------
@@ -124,7 +138,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 $(OUTPUT)$(EXEEXT)	:	$(OFILES)
 	@echo linking
-	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 	@upx $@
 
 #---------------------------------------------------------------------------------
@@ -134,7 +148,7 @@ $(OUTPUT)$(EXEEXT)	:	$(OFILES)
 #---------------------------------------------------------------------------------
 %.o : %.cpp
 	@echo $(notdir $<)
-	$(CXX) -MMD $(CFLAGS) -o $@ -c $<
+	@$(CXX) -MMD $(CFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.c
@@ -145,6 +159,36 @@ $(OUTPUT)$(EXEEXT)	:	$(OFILES)
 %.o : %.s
 	@echo $(notdir $<)
 	@$(CC) -MMD $(ASFLAGS) -o $@ -c $<
+
+
+#---------------------------------------------------------------------------------
+# canned command sequence for binary data
+#---------------------------------------------------------------------------------
+define bin2o
+	cp $(<) $(*).tmp
+	$(OBJCOPY) -I binary -O $(BINARY_FMT) -B $(BINARY_ARCH) \
+	--rename-section .data=.rodata,readonly,data,contents,alloc \
+	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_start=`(echo _$(*) | tr . _)`\
+	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_end=`(echo _$(*) | tr . _)`_end\
+	--redefine-sym _binary_`(echo $(*) | tr . _)`_tmp_size=`(echo _$(*) | tr . _)`_size\
+	$(*).tmp $(@)
+	echo "extern const u32" `(echo $(*) | tr . _)`"_end[];" >> $(*).h
+	echo "extern const u8" `(echo $(*) | tr . _)`"[];" >> $(*).h
+	echo "extern const u32" `(echo $(*) | tr . _)`_size[]";" >> $(*).h
+	rm $(*).tmp
+endef
+
+#---------------------------------------------------------------------------------
+%.o	:	%.bmp
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+ 
+#---------------------------------------------------------------------------------
+%.o	:	%.bin
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	$(bin2o)
 
 -include $(DEPENDS)
 

@@ -15,6 +15,7 @@
 	v1.06 - changed parameter style, add/extract icon+title data option
 	v1.07 - add/extract header option, filesystem
 	v1.08 - added icon converter
+	v1.09 - added default arm7 binary
 
 	TODO:
 	code cleanup
