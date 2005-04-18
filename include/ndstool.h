@@ -14,11 +14,13 @@
 #ifndef __MINGW32__
 #define MAX_PATH	2048
 
+#else
 #define __LITTLE_ENDIAN 1234
 #define __BIG_ENDIAN    4321
 #define __PDP_ENDIAN    3412
 
 #define __BYTE_ORDER	__LITTLE_ENDIAN
+
 #endif
 
 typedef	unsigned char			u8;
@@ -30,6 +32,7 @@ struct unsigned_int
 {
 	unsigned int i;
 	#if __BYTE_ORDER == __BIG_ENDIAN
+	#error "big endian!!!"
 		operator unsigned int () { return i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
 		unsigned int & operator = (unsigned int i) { return this->i = i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
 	#else
