@@ -27,8 +27,8 @@ DATA		:=	data
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-DEBUGFLAGS	:=	-static -s
-CFLAGS	:=	$(DEBUGFLAGS) -Wall -O0\
+DEBUGFLAGS	:= -static -s
+CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3 -fno-rtti -fno-exceptions
 
 CFLAGS	+=	$(INCLUDE)
 
@@ -37,19 +37,19 @@ LDFLAGS	=	$(DEBUGFLAGS) -Wl,-Map,$(TARGET).map
 UNAME := $(shell uname -s)
 
 ifneq (,$(findstring MINGW,$(UNAME)))
-	PLATFORM	:= win32
-	EXEEXT		:= .exe
-	BINARY_FMT	:= pe-i386
-	BINARY_ARCH	:= i386
+	PLATFORM		:= win32
+	EXEEXT			:= .exe
+	BINARY_FMT		:= pe-i386
+	BINARY_ARCH		:= i386
 	LABEL_PREFIX	:= _
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
-	PLATFORM	:=	linux
-	EXEEXT		:=
+	PLATFORM		:=	linux
+	EXEEXT			:=
+	BINARY_FMT		:=	elf32-i386
+	BINARY_ARCH		:=	i386
 	LABEL_PREFIX	:=
-	BINARY_FMT	:=	elf32-i386
-	BINARY_ARCH	:=	i386
 endif
 
 

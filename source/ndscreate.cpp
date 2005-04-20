@@ -28,7 +28,6 @@ char *arm7filename = 0;
 char *arm9filename = 0;
 char *filerootdir = 0;
 char *icontitlefilename = 0;
-char *icontitlename = 0;
 char *icontitletext = 0;
 char *headerfilename = 0;
 int icontype;
@@ -283,7 +282,7 @@ u16 RGBQuadToRGB16(RGBQUAD quad) {
 int InsertTitleString(char *String, FILE* file)
 {
 	if ( String == NULL) return 0;
-	int Count;
+	int Count=0;
 	
 	char *token = String;
 	
@@ -364,7 +363,6 @@ void IconFromBMP()
 	// everything else is filled with 0x00
 	int dataCount = 0;
 
-	dataCount += InsertTitleString(icontitlename, fNDS);
 	dataCount += InsertTitleString(icontitletext, fNDS);
 	
 	// fill the rest of the string with 0x00
@@ -376,6 +374,14 @@ void IconFromBMP()
 		fputc(0x00, fNDS);
 	}
 }
+
+/*
+ * AddFile
+ */
+void AddFile(char *filename)
+{
+}
+
 /*
  * Create
  */
@@ -425,8 +431,8 @@ void Create()
 	//header.arm7_rom_offset = header.arm7_rom_offset;		// ******************
 	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
 
-	unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = 0x02380000;
-	unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = 0x02380000;
+	unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = 0x03800000;
+	unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = 0x03800000;
 	unsigned int size = 0;
 
 	// ARM7 binary

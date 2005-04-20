@@ -26,19 +26,6 @@
 
 
 
-
-
-/*
- * AddFile
- */
-void AddFile(char *filename)
-{
-}
-
-
-
-
-
 /*
 void DebugTree(Tree *tree, int level = 0)
 {
@@ -181,12 +168,12 @@ void Help()
 	printf("Create             -c game.nds\n");
 	printf("Extract            -x game.nds\n");
 	printf("Create/Extract options:\n");
-	printf("  ARM7 executable  -7 arm7.bin                  (optional)\n");
+	printf("  ARM7 executable  -7 arm7.bin                    (optional)\n");
 	printf("  ARM9 executable  -9 arm9.bin\n");
-	printf("  files            -d directory                 (optional)\n");
-	printf("  header           -h header.bin                (optional)\n");
-	printf("  icon/title       -b icontitle.bmp title text  (optional)\n");
-	printf("  icon/title       -t icontitle.bin             (optional)\n");
+	printf("  files            -d directory                   (optional)\n");
+	printf("  header           -h header.bin                  (optional)\n");
+	printf("  icon/title       -b icontitle.bmp 'title text'  (optional)\n");
+	printf("  icon/title       -t icontitle.bin               (optional)\n");
 	printf("               Separate lines with ';' for the title text.\n");
 	printf("  verbose          -v\n");
 	exit(0);
@@ -284,7 +271,6 @@ int main(int argc, char *argv[])
 				case 'b':
 					icontype = IMAGE;
 					icontitlefilename = (argc > a) ? argv[++a] : 0;
-					icontitlename = (argc > a) ? argv[++a] : 0;
 					icontitletext = (argc > a) ? argv[++a] : 0;
 					break;
 				case 'h': headerfilename = (argc > a) ? argv[++a] : 0; break;

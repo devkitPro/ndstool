@@ -191,6 +191,7 @@ unsigned short CalcLogoCRC();
 unsigned short CalcSecureAreaCRC();
 void FixHeaderCRC(char *ndsfilename);
 void Create();
+void AddFile(char *filename);
 
 void ExtractFile(char *filename, unsigned int file_id);
 void ExtractDirectory(char *prefix, unsigned int dir_id);
