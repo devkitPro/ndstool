@@ -446,6 +446,7 @@ void Create()
 	else
 	{
 		fwrite(default_arm7,(u32)default_arm7_size,1,fNDS);
+		size = default_arm7_size;
 	}
 
 	header.arm7_entry_address = entry_address;
