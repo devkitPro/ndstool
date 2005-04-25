@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -11,7 +11,7 @@
 
 #define VER			"1.09"
 
-#if defined ( __MINGW32__) || defined (__CYGWIN32__)
+/*#if defined ( __MINGW32__) || defined (__CYGWIN32__)
 
 #define __LITTLE_ENDIAN 1234
 #define __BIG_ENDIAN    4321
@@ -22,7 +22,7 @@
 #else
 #define MAX_PATH	2048
 #endif
-
+*/
 typedef	unsigned char			u8;
 typedef	unsigned short int		u16;
 typedef	unsigned int			u32;
@@ -31,7 +31,7 @@ typedef	unsigned int			u32;
 struct unsigned_int
 {
 	unsigned int i;
-	#if __BYTE_ORDER == __BIG_ENDIAN
+	#if BYTE_ORDER == BIG_ENDIAN
 	#error "big endian!!!"
 		operator unsigned int () { return i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
 		unsigned int & operator = (unsigned int i) { return this->i = i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
