@@ -35,7 +35,7 @@ UNAME := $(shell uname -s)
 CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3 
 CFLAGS	+=	$(INCLUDE)
 
-CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
+CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
 
 LDFLAGS	=	$(DEBUGFLAGS) -Wl,-Map,$(TARGET).map
 
@@ -44,7 +44,7 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 	EXEEXT			:= .exe
 endif
 
-ifneq (,$(findstring  CYGWIN,$(UNAME)))
+ifneq (,$(findstring CYGWIN,$(UNAME)))
 	CFLAGS += -mno-cygwin
 	LDFLAGS += -mno-cygwin
 	PLATFORM		:= win32
@@ -155,12 +155,12 @@ $(OUTPUT)$(EXEEXT)	:	$(OFILES)
 #---------------------------------------------------------------------------------
 %.o : %.cpp
 	@echo $(notdir $<)
-	@$(CXX) -MMD $(CXXFLAGS) -o $@ -c $<
+	$(CXX) -MMD $(CXXFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.c
 	@echo $(notdir $<)
-	@$(CC) -MMD $(CFLAGS) -o $@ -c $<
+	$(CC) -MMD $(CFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.s
