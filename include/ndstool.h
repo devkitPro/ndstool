@@ -11,7 +11,7 @@
 
 #define VER			"1.09"
 
-#ifndef __MINGW32__
+#ifndef __WIN32__
 #define MAX_PATH	2048
 
 #else
