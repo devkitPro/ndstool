@@ -11,16 +11,16 @@
 
 #define VER			"1.09"
 
-#ifndef __WIN32__
-#define MAX_PATH	2048
+#if defined ( __MINGW32__) || defined (__CYGWIN32__)
 
-#else
 #define __LITTLE_ENDIAN 1234
 #define __BIG_ENDIAN    4321
 #define __PDP_ENDIAN    3412
 
 #define __BYTE_ORDER	__LITTLE_ENDIAN
 
+#else
+#define MAX_PATH	2048
 #endif
 
 typedef	unsigned char			u8;

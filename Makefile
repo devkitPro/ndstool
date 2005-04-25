@@ -29,6 +29,9 @@ DATA		:=	data
 #---------------------------------------------------------------------------------
 DEBUGFLAGS	:= -static -s
 
+
+UNAME := $(shell uname -s)
+
 CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3 
 CFLAGS	+=	$(INCLUDE)
 
@@ -36,14 +39,14 @@ CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
 
 LDFLAGS	=	$(DEBUGFLAGS) -Wl,-Map,$(TARGET).map
 
-UNAME := $(shell uname -s)
-
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM		:= win32
 	EXEEXT			:= .exe
 endif
 
 ifneq (,$(findstring  CYGWIN,$(UNAME)))
+	CFLAGS += -mno-cygwin
+	LDFLAGS += -mno-cygwin
 	PLATFORM		:= win32
 	EXEEXT			:= .exe
 endif
@@ -52,6 +55,7 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	PLATFORM		:=	linux
 	EXEEXT			:=
 endif
+
 
 
 #---------------------------------------------------------------------------------
