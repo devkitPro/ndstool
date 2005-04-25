@@ -418,7 +418,7 @@ void Create()
 			CopyFromBin(arm9filename, &size);
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
-		header.arm9_size = size;
+		header.arm9_size = ((size +3 ) & -4);
 	}
 	else
 	{
@@ -451,7 +451,7 @@ void Create()
 
 	header.arm7_entry_address = entry_address;
 	header.arm7_ram_address = ram_address;
-	header.arm7_size = size;
+	header.arm7_size = ((size +3 ) & -4);
 	
 	// icon/title
 	if (icontitlefilename)
