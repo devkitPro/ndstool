@@ -41,7 +41,14 @@ UNAME := $(shell uname -s)
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM		:= win32
 	EXEEXT			:= .exe
-else
+endif
+
+ifneq (,$(findstring  CYGWIN,$(UNAME)))
+	PLATFORM		:= win32
+	EXEEXT			:= .exe
+endif
+
+ifneq (,$(findstring Linux,$(UNAME)))
 	PLATFORM		:=	linux
 	EXEEXT			:=
 endif
