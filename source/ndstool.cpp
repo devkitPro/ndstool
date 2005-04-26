@@ -5,21 +5,6 @@
 	additional code
 		natrium42 <natrium@gmail.com>	
 		WinterMute <wntrmute@gmail.com>
-
-	v1.00 - shows info, fixes CRC, extracts files
-	v1.01 - extracts ARM7/ARM9 code, more header info
-	v1.02 - added maker codes, logo CRC, cartridge code
-	v1.03 - shows if secure area CRC was ok, added function to create NDS file (ELF files for ARM7/9, no filesystem yet)
-	v1.04 - added option to list files without extracting
-	v1.05 - fix CRC option only updates header CRC for easier PassMe calculation
-	v1.06 - changed parameter style, add/extract icon+title data option
-	v1.07 - add/extract header option, filesystem
-	v1.08 - added icon converter
-	v1.09 - added default arm7 binary
-
-	TODO:
-	code cleanup
-
 */
 
 #include "ndstool.h"
