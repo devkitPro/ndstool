@@ -28,7 +28,7 @@ void WalkTree(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _
 	//printf("%04X %04X+ ", this_dir_id, (int)top_file_id);
 	printf("%s\n", prefix);
 
-	char strbuf[MAX_PATH];
+	char strbuf[MAXPATHLEN];
 
 	// write names and allocate IDs
 	fseek(fNDS, header.fnt_offset + _entry_start, SEEK_SET);
@@ -124,7 +124,7 @@ void ReadDirectory(Tree *tree, char *path)
 		if (!strcmp(de->d_name, ".")) continue;
 		if (!strcmp(de->d_name, "..")) continue;
 
-		char strbuf[MAX_PATH];
+		char strbuf[MAXPATHLEN];
 		strcpy(strbuf, path);
 		strcat(strbuf, "/");
 		strcat(strbuf, de->d_name);

@@ -48,7 +48,7 @@ void ExtractFile(char *filename, unsigned int file_id)
  */
 void ExtractDirectory(char *prefix, unsigned int dir_id)
 {
-	char strbuf[MAX_PATH];
+	char strbuf[MAXPATHLEN];
 	unsigned int save_filepos = ftell(fNDS);
 
 	fseek(fNDS, header.fnt_offset + 8*(dir_id & 0xFFF), SEEK_SET);

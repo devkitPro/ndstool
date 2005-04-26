@@ -400,8 +400,8 @@ void Create()
 		header.arm9_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
 		//header.arm9_rom_offset = header.arm9_rom_offset;		// ******************
 		fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
-		unsigned int entry_address = header.arm9_entry_address; if (!entry_address) entry_address = 0x02004000;
-		unsigned int ram_address = header.arm9_ram_address; if (!ram_address) ram_address = 0x02004000;
+		unsigned int entry_address = header.arm9_entry_address; if (!entry_address) entry_address = defaultArm9entry;
+		unsigned int ram_address = header.arm9_ram_address; if (!ram_address) ram_address = defaultArm9entry;
 		unsigned int size = 0;
 		if (HasElfExtension(arm9filename))
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
@@ -422,8 +422,8 @@ void Create()
 	//header.arm7_rom_offset = header.arm7_rom_offset;		// ******************
 	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
 
-	unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = 0x03800000;
-	unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = 0x03800000;
+	unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = defaultArm7entry;
+	unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = defaultArm7entry;
 	unsigned int size = 0;
 
 	// ARM7 binary

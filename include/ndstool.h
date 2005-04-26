@@ -11,23 +11,13 @@
 
 #define VER			"1.09"
 
-/*#if defined ( __MINGW32__) || defined (__CYGWIN32__)
-
-#define __LITTLE_ENDIAN 1234
-#define __BIG_ENDIAN    4321
-#define __PDP_ENDIAN    3412
-
-#define __BYTE_ORDER	__LITTLE_ENDIAN
-
-#else
-#define MAX_PATH	2048
-#endif
-*/
 typedef	unsigned char			u8;
 typedef	unsigned short int		u16;
 typedef	unsigned int			u32;
 
-
+static const unsigned int defaultArm7entry = 0x03800000;
+static const unsigned int defaultArm9entry = 0x02000000;
+ 
 struct unsigned_int
 {
 	unsigned int i;
