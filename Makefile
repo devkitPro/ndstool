@@ -22,7 +22,7 @@ TARGET		:=	ndstool
 BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
-DATA		:=	data
+DATA		:=	incdata
 
 #---------------------------------------------------------------------------------
 # options for code generation
