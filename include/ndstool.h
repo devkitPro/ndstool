@@ -9,7 +9,7 @@
 #include "little.h"
 #include "header.h"
 
-#define VER			"1.09"
+#define VER			"1.10"
 
 static const unsigned int defaultArm7entry = 0x03800000;
 static const unsigned int defaultArm9entry = 0x02000000;
