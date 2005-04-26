@@ -137,7 +137,8 @@ void Create()
 	}
 
 	// skip header
-	unsigned int header_size = header.rom_header_size; if (!header_size) header_size = 0x200;
+	unsigned int header_size = header.rom_header_size;
+	if (!header_size) { header_size = 0x200; header.rom_header_size = header_size; }
 	fseek(fNDS, header_size, SEEK_SET);
 
 	// ARM9 binary
@@ -154,7 +155,7 @@ void Create()
 			CopyFromBin(arm9filename, &size);
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
-		header.arm9_size = ((size + 3) & -4);
+		header.arm9_size = ((size + 3) &~ 3);
 	}
 	else
 	{
@@ -177,7 +178,7 @@ void Create()
 			CopyFromBin(arm7filename, &size);
 		header.arm7_entry_address = entry_address;
 		header.arm7_ram_address = ram_address;
-		header.arm7_size = ((size + 3) & -4);
+		header.arm7_size = ((size + 3) &~ 3);
 	}
 	else
 	{
@@ -220,9 +221,9 @@ void Create()
 
 		_entry_start = 8*directory_count;
 		header.fnt_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;		// align to 512 bytes
-		header.fnt_size = _entry_start + ((file_count+directory_count)*1/*length*/ + total_name_size/*names of both dirs and files*/ + directory_count*1/*end of directory*/);
+		header.fnt_size = _entry_start + ((file_count + directory_count)*1/*length*/ + total_name_size/*names of both dirs and files*/ + directory_count*1/*end of directory*/);
 		header.fat_offset = (header.fnt_offset + header.fnt_size + 0x1FF) &~ 0x1FF;		// align to 512 bytes;
-		header.fat_size = file_count*8;
+		header.fat_size = file_count * 8;		// each entry contains top & bottom offset
 		file_top = header.fat_offset + header.fat_size;
 
 		//DebugTree(root);
@@ -252,12 +253,13 @@ void Create()
 	// pad end of file
 	int pad = ((ftell(fNDS) + 0x1FF) &~ 0x1FF) - ftell(fNDS);	// align to 512 bytes
 	while (pad--) fputc(0, fNDS);
+	header.application_end_offset = ftell(fNDS);
 
 	// header
 	header.logo_crc = CalcLogoCRC();
 	header.header_crc = CalcHeaderCRC();
 	fseek(fNDS, 0, SEEK_SET);
-	fwrite(&header, 512, 1, fNDS);
+	fwrite(&header, 0x200, 1, fNDS);
 	
 	fclose(fNDS);
 }

@@ -129,11 +129,18 @@ unsigned int WalkTree(Tree *tree, char *prefix, unsigned int this_dir_id, unsign
 			file_top = (file_top + 0x1FF) &~ 0x1F;		// align to 512 bytes
 			fseek(fNDS, file_top, SEEK_SET);
 
+			if (verbose)
+			{
+				strcpy(strbuf, prefix);
+				strcat(strbuf, t->name);
+				printf("%s\n", strbuf);
+			}
+
 			// open file
 			strcpy(strbuf, filerootdir);
 			strcat(strbuf, prefix);
 			strcat(strbuf, t->name);
-			//printf("%04X %s\n", _top_file_id, strbuf);
+
 			FILE *fi = fopen(strbuf, "rb");
 			if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", strbuf); exit(1); }
 			fseek(fi, 0, SEEK_END);

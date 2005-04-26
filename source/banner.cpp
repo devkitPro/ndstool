@@ -26,7 +26,7 @@ int InsertTitleString(char *String, FILE *file)
 {
 	if (String == NULL) return 0;
 	int Count=0;
-	
+
 	char *token = String;
 	while (*token)
 	{
@@ -58,16 +58,19 @@ void IconFromBMP()
 		exit(1);
 	}
 
-	printf("Size: %i x %i\n", bmp.Width, bmp.Height);
-	printf("Bits per pixel: %i\n", bmp.BPP);
-	printf("Colors used: %i\n", bmp.pbmi->bmiHeader.biClrUsed);
+	if (verbose)
+	{
+		printf("Size: %i x %i\n", (int)bmp.Width, (int)bmp.Height);
+		printf("Bits per pixel: %i\n", (int)bmp.BPP);
+		printf("Colors used: %i\n", (int)bmp.pbmi->bmiHeader.biClrUsed);
+	}
 
 	if(bmp.Width != 32 || bmp.Height != 32) {
-		printf("Error: Image should be 32 x 32\n");
+		fprintf(stderr, "Error: Image should be 32 x 32\n");
 		exit(1);
 	}
 	if(bmp.BPP != 8) {
-		printf("Error: Image should use 8-bit indexed colors\n");
+		fprintf(stderr, "Error: Image should use 8-bit indexed colors\n");
 		exit(1);
 	}
 	header.icon_title_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
@@ -84,12 +87,12 @@ void IconFromBMP()
 	for(int row = 0; row < 4; row++) {
 		for(int col = 0; col < 4; col++) {
 			for(int y = 0; y < 8; y++) {
-				for(int x = 0; x < 4; x++) {	
+				for(int x = 0; x < 4; x++) {
 					unsigned char b0 = bmp.Raster[row * 64 * 4 + y * 8 * 4 + (x * 2 + col * 8)];
 					unsigned char b1 = bmp.Raster[row * 64 * 4 + y * 8 * 4 + (x * 2 + 1 + col * 8)];
 					// two nibbles form a byte:
 					fputc(((b1 & 0xF) << 4) | (b0 & 0xF), fNDS);
-			}	
+			}
 			}
 		}
 	}
@@ -107,7 +110,7 @@ void IconFromBMP()
 	int dataCount = 0;
 
 	dataCount += InsertTitleString(icontitletext, fNDS);
-	
+
 	// fill the rest of the string with 0x00
 	for(int i = 0; i < 256 - dataCount; i++) {
 		fputc(0x00, fNDS);

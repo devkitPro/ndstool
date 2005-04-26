@@ -1,7 +1,9 @@
 // Code taken from: BMP LOAD EXAMPLE by Juan Soulie <jsoulie@cplusplus.com>
 // Modified by natrium42 <natrium@gmail.com>
 
+#include "ndstool.h"
 #include "raster.h"
+
 
 // **********
 // CRaster::LoadBMPFile (FileName);
@@ -21,12 +23,12 @@ int CRaster::LoadBMP (char * szFile)
 	bmpfile.read ((char*)&bmih,sizeof (BITMAPINFOHEADER));
 
 	// Check filetype signature
-	if (bmfh.bfType!='MB') return 2;		// File is not BMP
+	if ((bmfh.bfType[0] != 'M') || (bmfh.bfType[1] != 'B')) return 2;		// File is not BMP
 
 	// Assign some short variables:
 	BPP=bmih.biBitCount;
 	Width=bmih.biWidth;
-	Height= (bmih.biHeight>0) ? bmih.biHeight : -bmih.biHeight; // absoulte value
+	Height=(bmih.biHeight>0) ? (int)bmih.biHeight : -(int)bmih.biHeight; // absoulte value
 	BytesPerRow = Width * BPP / 8;
 	BytesPerRow += (4-BytesPerRow%4) % 4;	// int alignment
 
@@ -43,7 +45,7 @@ int CRaster::LoadBMP (char * szFile)
 	// Load Raster
 	bmpfile.seekg (bmfh.bfOffBits,ios::beg);
 
-	Raster= new char[BytesPerRow*Height];
+	Raster = new char[BytesPerRow*Height];
 
 	// (if height is positive the bmp is bottom-up, read it reversed)
 	if (bmih.biHeight>0)

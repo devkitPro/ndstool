@@ -17,7 +17,7 @@ void ExtractFile(char *filename, unsigned int file_id)
 	unsigned int size = bottom - top;
 
 	// print file size
-	if (filerootdir && verbose)
+	if (!filerootdir || verbose)
 	{
 		printf("%8u\n", size);
 	}
@@ -63,7 +63,7 @@ void ExtractDirectory(char *prefix, unsigned int dir_id)
 
 	// print directory name
 	//printf("%04X ", dir_id);
-	if (filerootdir && verbose)
+	if (!filerootdir || verbose)
 	{
 		printf("%s\n", prefix);
 	}
@@ -108,7 +108,7 @@ void ExtractDirectory(char *prefix, unsigned int dir_id)
 		}
 		else
 		{
-			if (filerootdir && verbose)
+			if (!filerootdir || verbose)
 			{
 				//printf("%04X ", file_id);
 				printf("%s%s", prefix, entry_name);
