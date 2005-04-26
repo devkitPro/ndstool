@@ -81,6 +81,7 @@ LIBDIRS	:= /usr/local
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
+export OUTPUTDIR:=	$(CURDIR)
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -151,7 +152,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT)$(EXEEXT)	:	$(OFILES)
 	@echo linking
 	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
-	@upx $@
+	@( cd $(OUTPUTDIR); upx -9 $(TARGET)$(EXEEXT) )
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
