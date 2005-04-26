@@ -11,9 +11,6 @@
 
 #define VER			"1.10"
 
-static const unsigned int defaultArm7entry = 0x03800000;
-static const unsigned int defaultArm9entry = 0x02000000;
-
 struct Tree
 {
 	unsigned int dir_id;	// directory IDs are allocated first
@@ -30,7 +27,7 @@ struct Tree
 	}
 };
 
-enum { BINARY, IMAGE };
+enum { BANNER_BINARY, BANNER_IMAGE };
 
 extern unsigned int free_dir_id;
 extern unsigned int directory_count;
@@ -48,11 +45,12 @@ extern char *ndsfilename;
 extern char *arm7filename;
 extern char *arm9filename;
 extern char *filerootdir;
-extern char *icontitlefilename;
-extern char *icontitlename;
-extern char *icontitletext;
-extern int icontype;
+extern char *bannerfilename;
+extern char *bannertext;
+extern int bannertype;
 extern char *headerfilename;
+extern unsigned int defaultArm7entry;
+extern unsigned int defaultArm9entry;
 
 // ndscreate
 unsigned int WalkTree(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id);

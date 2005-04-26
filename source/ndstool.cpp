@@ -19,10 +19,12 @@ char *ndsfilename = 0;
 char *arm7filename = 0;
 char *arm9filename = 0;
 char *filerootdir = 0;
-char *icontitlefilename = 0;
-char *icontitletext = 0;
+char *bannerfilename = 0;
+char *bannertext = 0;
 char *headerfilename = 0;
-int icontype;
+int bannertype;
+unsigned int defaultArm7entry = 0x03800000;
+unsigned int defaultArm9entry = 0x02004000;
 
 
 #ifdef _NDSTOOL_P_H
@@ -32,8 +34,13 @@ int icontype;
 /*
  * Help
  */
-void Help()
+void Help(char *unknownoption = 0)
 {
+	if (unknownoption)
+	{
+		printf("Unknown option: %s\n\n", unknownoption);
+	}
+
 	printf("Show header:       -i game.nds\n");
 	printf("Fix header CRC     -f game.nds\n");
 	printf("List files:        -l game.nds\n");
@@ -43,15 +50,15 @@ void Help()
 	printf("Create             -c game.nds\n");
 	printf("Extract            -x game.nds\n");
 	printf("Create/Extract options:\n");
-	printf("  ARM7 executable  -7 arm7.bin                    (optional)\n");
+	printf("  ARM7 executable  -7 arm7.bin\n");
 	printf("  ARM9 executable  -9 arm9.bin\n");
+	printf("  ARM7 RAM address -r7 arm7.bin                   (optional)\n");
+	printf("  ARM9 RAM address -r9 arm9.bin                   (optional)\n");
 	printf("  files            -d directory                   (optional)\n");
 	printf("  header           -h header.bin                  (optional)\n");
-	printf("  icon/title       -b icontitle.bmp 'title text'  (optional)\n");
-	printf("  icon/title       -t icontitle.bin               (optional)\n");
-	printf("               Separate lines with ';' for the title text.\n");
+	printf("  banner           -b icon.bmp \"title;lines;here\" (optional)\n");
+	printf("  banner binary    -t banner.bin                  (optional)\n");
 	printf("  verbose          -v\n");
-	exit(0);
 }
 
 /*
@@ -64,7 +71,7 @@ int main(int argc, char *argv[])
 	#endif
 
 	printf("Nintendo DS rom tool "VER" by Rafael Vuijk (aka DarkFader)\n\n");
-	if (argc < 2) Help();
+	if (argc < 2) { Help(); return 0; }
 
 	// initialize default header
 	memset(&header, 0, 0x200);
@@ -139,23 +146,39 @@ int main(int argc, char *argv[])
 				case 'd': filerootdir = (argc > a) ? argv[++a] : 0; break;
 				case '7': arm7filename = (argc > a) ? argv[++a] : 0; break;
 				case '9': arm9filename = (argc > a) ? argv[++a] : 0; break;
+
 				case 't':
-					icontitlefilename = (argc > a) ? argv[++a] : 0;
-					icontype = BINARY;
+					bannerfilename = (argc > a) ? argv[++a] : 0;
+					bannertype = BANNER_BINARY;
 					break;
+
 				case 'b':
-					icontype = IMAGE;
-					icontitlefilename = (argc > a) ? argv[++a] : 0;
-					icontitletext = (argc > a) ? argv[++a] : 0;
+					bannertype = BANNER_IMAGE;
+					bannerfilename = (argc > a) ? argv[++a] : 0;
+					bannertext = (argc > a) ? argv[++a] : 0;
 					break;
-				case 'h': headerfilename = (argc > a) ? argv[++a] : 0; break;
-				case 'v': verbose = true; break;
+
+				case 'h':	// load header
+					headerfilename = (argc > a) ? argv[++a] : 0;
+					break;
+
+				case 'v':	// verbose
+					verbose = true;
+					break;
+
+				case 'r':	// RAM address
+					switch (argv[a][2])
+					{
+						case '7': defaultArm7entry = 0x03800000;
+						case '9': defaultArm9entry = 0x02004000;
+						default: Help(argv[a]); return 1;
+					}
+					break;
 
 				default:
 				{
-					printf("Unknown option: %s\n", argv[a]);
-					Help();
-					break;
+					Help(argv[a]);
+					return 1;
 				}
 			}
 		}
@@ -178,7 +201,7 @@ int main(int argc, char *argv[])
 		if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
 		if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C);
 		if (filerootdir) ExtractFiles();
-		if (icontitlefilename) Extract(icontitlefilename, true, 0x68, false, 0x840);
+		if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
 		if (headerfilename) Extract(headerfilename, false, 0x0, false, 0x200);
 	}
 	else if (create)

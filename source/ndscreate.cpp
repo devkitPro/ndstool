@@ -187,23 +187,23 @@ void Create()
 		header.arm7_size = 0;
 	}
 
-	// icon/title
-	if (icontitlefilename)
+	// banner
+	if (bannerfilename)
 	{
-		if (icontype == IMAGE)
+		if (bannertype == BANNER_IMAGE)
 		{
 			IconFromBMP();
 		}
 		else
 		{
-			header.icon_title_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
-			fseek(fNDS, header.icon_title_offset, SEEK_SET);
-			CopyFromBin(icontitlefilename, 0);
+			header.banner_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
+			fseek(fNDS, header.banner_offset, SEEK_SET);
+			CopyFromBin(bannerfilename, 0);
 		}
 	}
 	else
 	{
-		header.icon_title_offset = 0;
+		header.banner_offset = 0;
 	}
 	
 	// filesystem

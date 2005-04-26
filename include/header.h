@@ -28,7 +28,7 @@ struct Header
 	unsigned_int arm7_overlay_offset;
 	unsigned_int arm7_overlay_size;
 	unsigned char rom_control_info1[8];
-	unsigned_int icon_title_offset;
+	unsigned_int banner_offset;
 	unsigned_short secure_area_crc;
 	unsigned_short rom_control_info2;
 	unsigned_int offset_0x70;
