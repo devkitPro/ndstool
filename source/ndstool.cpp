@@ -213,9 +213,10 @@ int main(int argc, char *argv[])
 			strcpy(default_arm7, argv[0]);
 			char *p = strrchr(default_arm7, '/');
 			if (!p) p = strrchr(default_arm7, '\\');
-			strcpy(p, "/default_arm7.bin");
+			if (p) p++; else p = default_arm7;
+			strcpy(p, "default_arm7.bin");
 			FILE *f = fopen(default_arm7, "rb");
-			if (!f) { strcpy(p, "/default_arm7.bin"); f = fopen(default_arm7, "rb"); }
+			if (!f) { strcpy(p, "default_arm7.bin"); f = fopen(default_arm7, "rb"); }
 			if (f) { fclose(f); arm7filename = default_arm7; }
 		}
 		
