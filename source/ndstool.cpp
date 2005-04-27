@@ -8,6 +8,7 @@
 */
 
 #include "ndstool.h"
+#include <unistd.h>
 
 /*
  * Variables
@@ -67,7 +68,7 @@ void Help(char *unknownoption = 0)
 int main(int argc, char *argv[])
 {
 	#ifdef _NDSTOOL_P_H
-		if (sizeof(Header) != 0x200) { printf("%d != %d\n", sizeof(Header), 0x200); exit(1); }
+		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); exit(1); }
 	#endif
 
 	printf("Nintendo DS rom tool "VER" by Rafael Vuijk (aka DarkFader)\n\n");
@@ -169,8 +170,8 @@ int main(int argc, char *argv[])
 				case 'r':	// RAM address
 					switch (argv[a][2])
 					{
-						case '7': defaultArm7entry = 0x03800000;
-						case '9': defaultArm9entry = 0x02004000;
+						case '7': defaultArm7entry = strtoul(argv[++a], 0, 0); break;
+						case '9': defaultArm9entry = strtoul(argv[++a], 0, 0); break;
 						default: Help(argv[a]); return 1;
 					}
 					break;
@@ -206,41 +207,42 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
-		// select default ARM7 binary
+		// find default ARM7 binary
 		if (!arm7filename)
 		{
-			// get argv[0] and insert arm7.bin
-			static char default_arm7[MAXPATHLEN];
-			strcpy(default_arm7, argv[0]);
-			char *p = strrchr(default_arm7, '/');
-			if (p) p++; else p = default_arm7;
-			strcpy(p, "arm7.bin");
-			
-			// find the file
-			if (access(default_arm7, F_OK) == 0)
+			// get executable name
+			char *exename = strrchr(argv[0], '/');
+			if (!exename) exename = strrchr(argv[0], '\\');
+			if (exename) exename++; else exename = argv[0];
+
+			// check path
+			char *path = getenv("PATH");
+			static char path_default_arm7[MAXPATHLEN];
+			char *t = strtok(path, ":");
+			while (t)
 			{
-				arm7filename = default_arm7;
-			}
-			else
-			{
-				// check path
-				char *path = getenv("PATH");
-				printf("%s\n", path);
-				static char path_default_arm7[MAXPATHLEN];
-				char *t = strtok(path, ":");
-				while (t)
+				strcpy(path_default_arm7, t);
+				strcat(path_default_arm7, "/");
+				if (
+					(strcat(path_default_arm7, exename), /*printf("checking %s\n", path_default_arm7),*/ access(path_default_arm7, F_OK) == 0) ||
+					(strcat(path_default_arm7, ".exe"), /*printf("checking %s\n", path_default_arm7),*/ access(path_default_arm7, F_OK) == 0)
+				)
 				{
-					strcpy(path_default_arm7, t);
-					strcat(path_default_arm7, "/");
-					strcat(path_default_arm7, default_arm7);
-					if (access(path_default_arm7, F_OK) == 0)
-					{
-						arm7filename = path_default_arm7;
-						break;
-					}
-					t = strtok(0, ":");
+					char *p = strrchr(path_default_arm7, '/');
+					if (p) p++; else p = path_default_arm7;
+					strcpy(p, "arm7.bin");
+					if (verbose) printf("Using default ARM7 binary: %s\n", path_default_arm7);
+					arm7filename = path_default_arm7;
+					break;
 				}
+				t = strtok(0, ":");
 			}
+		}
+		
+		if (!arm7filename)
+		{
+ 			fprintf(stderr, "Could not find default ARM7 binary.\n");
+			return 1;
 		}
 		
 		Create();
