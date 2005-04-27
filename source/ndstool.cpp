@@ -63,6 +63,19 @@ void Help(char *unknownoption = 0)
 }
 
 /*
+ * SetDefaultArm7Binary
+ */
+void SetDefaultArm7Binary(char *exepath)
+{
+	char *p = strrchr(exepath, '/');
+	if (!p) p = strrchr(exepath, '\\');
+	if (p) p++; else p = exepath;
+	strcpy(p, "arm7.bin");
+	if (verbose) printf("Using default ARM7 binary: %s\n", exepath);
+	arm7filename = exepath;
+}
+
+/*
  * main
  */
 int main(int argc, char *argv[])
@@ -207,35 +220,41 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
-		// find default ARM7 binary
 		if (!arm7filename)
 		{
-			// get executable name
-			char *exename = strrchr(argv[0], '/');
-			if (!exename) exename = strrchr(argv[0], '\\');
-			if (exename) exename++; else exename = argv[0];
-
-			// check path
-			char *path = getenv("PATH");
-			static char path_default_arm7[MAXPATHLEN];
-			char *t = strtok(path, ":");
-			while (t)
+			if (access(argv[0], F_OK) == 0)
+				SetDefaultArm7Binary(argv[0]);
+			else
 			{
-				strcpy(path_default_arm7, t);
-				strcat(path_default_arm7, "/");
-				if (
-					(strcat(path_default_arm7, exename), /*printf("checking %s\n", path_default_arm7),*/ access(path_default_arm7, F_OK) == 0) ||
-					(strcat(path_default_arm7, ".exe"), /*printf("checking %s\n", path_default_arm7),*/ access(path_default_arm7, F_OK) == 0)
-				)
+				// get executable name
+				char *exename = strrchr(argv[0], '/');
+				if (!exename) exename = strrchr(argv[0], '\\');
+				if (exename) exename++; else exename = argv[0];
+		
+				// get path
+				char *path = getenv("PATH");
+				static char exepath[MAXPATHLEN];
+		
+				// find default ARM7 binary
+				for (int pathsep=1; pathsep<2; pathsep++)
 				{
-					char *p = strrchr(path_default_arm7, '/');
-					if (p) p++; else p = path_default_arm7;
-					strcpy(p, "arm7.bin");
-					if (verbose) printf("Using default ARM7 binary: %s\n", path_default_arm7);
-					arm7filename = path_default_arm7;
-					break;
+					// check path
+					char *t = strtok(path, pathsep?";":":");
+					while (t)
+					{
+						strcpy(exepath, t);
+						strcat(exepath, "/");
+						if (
+							(strcat(exepath, exename), printf("checking %s\n", exepath), access(exepath, F_OK) == 0) ||
+							(strcat(exepath, ".exe"), printf("checking %s\n", exepath), access(exepath, F_OK) == 0)
+						)
+						{
+							SetDefaultArm7Binary(exepath);
+							break;
+						}
+						t = strtok(0, pathsep?";":":");
+					}
 				}
-				t = strtok(0, ":");
 			}
 		}
 		
