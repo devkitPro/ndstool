@@ -23,8 +23,8 @@ char *bannerfilename = 0;
 char *bannertext = 0;
 char *headerfilename = 0;
 int bannertype;
-unsigned int defaultArm7entry = 0x03800000;
 unsigned int defaultArm9entry = 0x02004000;
+unsigned int defaultArm7entry = 0x02380000;
 
 
 #ifdef _NDSTOOL_P_H
