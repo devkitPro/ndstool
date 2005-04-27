@@ -209,15 +209,38 @@ int main(int argc, char *argv[])
 		// select default ARM7 binary
 		if (!arm7filename)
 		{
-			char default_arm7[MAX_PATH];
+			// get argv[0] and insert arm7.bin
+			static char default_arm7[MAXPATHLEN];
 			strcpy(default_arm7, argv[0]);
 			char *p = strrchr(default_arm7, '/');
-			if (!p) p = strrchr(default_arm7, '\\');
 			if (p) p++; else p = default_arm7;
-			strcpy(p, "default_arm7.bin");
-			FILE *f = fopen(default_arm7, "rb");
-			if (!f) { strcpy(p, "default_arm7.bin"); f = fopen(default_arm7, "rb"); }
-			if (f) { fclose(f); arm7filename = default_arm7; }
+			strcpy(p, "arm7.bin");
+			
+			// find the file
+			if (access(default_arm7, F_OK) == 0)
+			{
+				arm7filename = default_arm7;
+			}
+			else
+			{
+				// check path
+				char *path = getenv("PATH");
+				printf("%s\n", path);
+				static char path_default_arm7[MAXPATHLEN];
+				char *t = strtok(path, ":");
+				while (t)
+				{
+					strcpy(path_default_arm7, t);
+					strcat(path_default_arm7, "/");
+					strcat(path_default_arm7, default_arm7);
+					if (access(path_default_arm7, F_OK) == 0)
+					{
+						arm7filename = path_default_arm7;
+						break;
+					}
+					t = strtok(0, ":");
+				}
+			}
 		}
 		
 		Create();
