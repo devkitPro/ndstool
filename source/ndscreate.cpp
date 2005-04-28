@@ -160,9 +160,10 @@ void Create()
 	}
 	else
 	{
-		header.arm9_entry_address = 0;
-		header.arm9_ram_address = 0;
-		header.arm9_size = 0;
+		
+		header.arm9_entry_address = defaultArm7entry;
+		header.arm9_ram_address = defaultArm7entry;
+		header.arm9_size = ((default_arm7_size +3) & ~3);
 	}
 
 	// ARM7 binary
@@ -185,10 +186,11 @@ void Create()
 	}
 	else
 	{
+		// Revert these changes again & I'll remove your CVS access
 		fwrite(default_arm7, 1, default_arm7_size, fNDS);
 		header.arm7_entry_address = defaultArm7entry;
 		header.arm7_ram_address = defaultArm7entry;
-		header.arm7_size = ((default_arm7_size + 3) &~ 3);
+		header.arm7_size = ((default_arm7_size + 3) & ~3);
 	}
 
 	// banner

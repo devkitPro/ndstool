@@ -1,9 +1,4 @@
 #---------------------------------------------------------------------------------
-# path to tools - this can be deleted if you set the path in windows
-#---------------------------------------------------------------------------------
-#export PATH		:=	/c/MinGW/bin:/bin:/c/bin
-
-#---------------------------------------------------------------------------------
 # the prefix on the compiler executables
 #---------------------------------------------------------------------------------
 PREFIX			:=
@@ -22,6 +17,8 @@ TARGET		:=	ndstool
 BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
+
+# Revert these changes again & I'll remove your CVS access
 DATA		:=	data
 
 #---------------------------------------------------------------------------------

@@ -24,8 +24,8 @@ char *bannerfilename = 0;
 char *bannertext = 0;
 char *headerfilename = 0;
 int bannertype;
-unsigned int defaultArm9entry = 0x02004000;
-unsigned int defaultArm7entry = 0x03800000;
+unsigned int defaultArm9entry = 0x03800000;
+unsigned int defaultArm7entry = 0x02380000;
 
 
 #ifdef _NDSTOOL_P_H
@@ -70,8 +70,6 @@ int main(int argc, char *argv[])
 	#ifdef _NDSTOOL_P_H
 		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); exit(1); }
 	#endif
-
-	char *newEntry;
 
 	printf("Nintendo DS rom tool "VER" by Rafael Vuijk (aka DarkFader)\n\n");
 	if (argc < 2) { Help(); return 0; }
@@ -170,9 +168,6 @@ int main(int argc, char *argv[])
 					break;
 
 				case 'r':	// RAM address
-
-					newEntry = (argc > a) ? argv[++a] : 0;
-
 					switch (argv[a][2])
 					{
 						case '7': defaultArm7entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
@@ -184,7 +179,7 @@ int main(int argc, char *argv[])
 				default:
 				{
 					Help(argv[a]);
-					exit(1);
+					return 1;
 				}
 			}
 		}
@@ -212,6 +207,7 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
+		// Revert these changes again & I'll remove your CVS access
 		Create();
 	}
 

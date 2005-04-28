@@ -4,7 +4,7 @@ by Rafael Vuijk (aka DarkFader)
 additional code
 	natrium42 <natrium@gmail.com>	
 	WinterMute <wntrmute@gmail.com>
-
+v1.11 - default arm7 binary internal, revert this again and lose cvs access
 v1.10 - padding, added filesize and headersize, endianess fix for bmp loader, default arm7 binary external
 v1.09 - added default arm7 binary
 v1.08 - added icon converter
