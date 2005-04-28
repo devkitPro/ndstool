@@ -186,7 +186,6 @@ void Create()
 	}
 	else
 	{
-		// Revert these changes again & I'll remove your CVS access
 		fwrite(default_arm7, 1, default_arm7_size, fNDS);
 		header.arm7_entry_address = defaultArm7entry;
 		header.arm7_ram_address = defaultArm7entry;
