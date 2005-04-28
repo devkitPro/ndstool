@@ -1,10 +1,6 @@
 /*
 	Nintendo DS rom tool
 	by Rafael Vuijk (aka DarkFader)
-
-	additional code
-		natrium42 <natrium@gmail.com>	
-		WinterMute <wntrmute@gmail.com>
 */
 
 #include "ndstool.h"
@@ -207,7 +203,8 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
-		// Revert these changes again & I'll remove your CVS access
+		// here... lots of hard work was deleted by WinterMute :(
+
 		Create();
 	}
 
