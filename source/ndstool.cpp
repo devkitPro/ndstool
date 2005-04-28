@@ -42,24 +42,24 @@ void Help(char *unknownoption = 0)
 		printf("Unknown option: %s\n\n", unknownoption);
 	}
 
-	printf("Show header:       -i game.nds\n");
-	printf("Fix header CRC     -f game.nds\n");
-	printf("List files:        -l game.nds\n");
+	printf("Show header:         -i game.nds\n");
+	printf("Fix header CRC       -f game.nds\n");
+	printf("List files:          -l game.nds\n");
 #ifdef _NDSTOOL_P_H
-	printf("Patch header:      -p game.nds        (only for DarkFader)\n");
+	printf("Patch header:        -p game.nds        (only for DarkFader)\n");
 #endif
-	printf("Create             -c game.nds\n");
-	printf("Extract            -x game.nds\n");
+	printf("Create               -c game.nds\n");
+	printf("Extract              -x game.nds\n");
 	printf("Create/Extract options:\n");
-	printf("  ARM7 executable  -7 arm7.bin\n");
-	printf("  ARM9 executable  -9 arm9.bin\n");
-	printf("  ARM7 RAM address -r7 arm7.bin                   (optional)\n");
-	printf("  ARM9 RAM address -r9 arm9.bin                   (optional)\n");
-	printf("  files            -d directory                   (optional)\n");
-	printf("  header           -h header.bin                  (optional)\n");
-	printf("  banner           -b icon.bmp \"title;lines;here\" (optional)\n");
-	printf("  banner binary    -t banner.bin                  (optional)\n");
-	printf("  verbose          -v\n");
+	printf("  ARM7 executable    -7 arm7.bin\n");
+	printf("  ARM9 executable    -9 arm9.bin\n");
+	printf("  ARM7 RAM address   -r7 address                    (optional, 0x for hex)\n");
+	printf("  ARM9 RAM address   -r9 address                    (optional, 0x for hex)\n");
+	printf("  files              -d directory                   (optional)\n");
+	printf("  header             -h header.bin                  (optional)\n");
+	printf("  banner             -b icon.bmp \"title;lines;here\" (optional)\n");
+	printf("  banner binary      -t banner.bin                  (optional)\n");
+	printf("  verbose            -v\n");
 }
 
 /*
@@ -183,8 +183,8 @@ int main(int argc, char *argv[])
 				case 'r':	// RAM address
 					switch (argv[a][2])
 					{
-						case '7': defaultArm7entry = strtoul(argv[++a], 0, 0); break;
-						case '9': defaultArm9entry = strtoul(argv[++a], 0, 0); break;
+						case '7': defaultArm7entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
+						case '9': defaultArm9entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
 						default: Help(argv[a]); return 1;
 					}
 					break;
