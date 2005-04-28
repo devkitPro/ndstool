@@ -1,4 +1,5 @@
 #include "ndstool.h"
+#include "default_arm7.h"
 
 /*
  * HasElfExtension
@@ -172,19 +173,22 @@ void Create()
 		unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = defaultArm7entry;
 		unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = defaultArm7entry;
 		unsigned int size = 0;
+
 		if (HasElfExtension(arm7filename))
 			CopyFromElf(arm7filename, &entry_address, &ram_address, &size);
 		else
 			CopyFromBin(arm7filename, &size);
+
 		header.arm7_entry_address = entry_address;
 		header.arm7_ram_address = ram_address;
 		header.arm7_size = ((size + 3) &~ 3);
 	}
 	else
 	{
-		header.arm7_entry_address = 0;
-		header.arm7_ram_address = 0;
-		header.arm7_size = 0;
+		fwrite(default_arm7, 1, default_arm7_size, fNDS);
+		header.arm7_entry_address = defaultArm7entry;
+		header.arm7_ram_address = defaultArm7entry;
+		header.arm7_size = ((default_arm7_size + 3) &~ 3);
 	}
 
 	// banner

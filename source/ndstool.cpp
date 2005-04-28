@@ -25,7 +25,7 @@ char *bannertext = 0;
 char *headerfilename = 0;
 int bannertype;
 unsigned int defaultArm9entry = 0x02004000;
-unsigned int defaultArm7entry = 0x02380000;
+unsigned int defaultArm7entry = 0x03800000;
 
 
 #ifdef _NDSTOOL_P_H
@@ -63,19 +63,6 @@ void Help(char *unknownoption = 0)
 }
 
 /*
- * SetDefaultArm7Binary
- */
-void SetDefaultArm7Binary(char *exepath)
-{
-	char *p = strrchr(exepath, '/');
-	if (!p) p = strrchr(exepath, '\\');
-	if (p) p++; else p = exepath;
-	strcpy(p, "arm7.bin");
-	if (verbose) printf("Using default ARM7 binary: %s\n", exepath);
-	arm7filename = exepath;
-}
-
-/*
  * main
  */
 int main(int argc, char *argv[])
@@ -83,6 +70,8 @@ int main(int argc, char *argv[])
 	#ifdef _NDSTOOL_P_H
 		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); exit(1); }
 	#endif
+
+	char *newEntry;
 
 	printf("Nintendo DS rom tool "VER" by Rafael Vuijk (aka DarkFader)\n\n");
 	if (argc < 2) { Help(); return 0; }
@@ -181,6 +170,9 @@ int main(int argc, char *argv[])
 					break;
 
 				case 'r':	// RAM address
+
+					newEntry = (argc > a) ? argv[++a] : 0;
+
 					switch (argv[a][2])
 					{
 						case '7': defaultArm7entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
@@ -192,7 +184,7 @@ int main(int argc, char *argv[])
 				default:
 				{
 					Help(argv[a]);
-					return 1;
+					exit(1);
 				}
 			}
 		}
@@ -220,50 +212,6 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
-		if (!arm7filename)
-		{
-			if (access(argv[0], F_OK) == 0)
-				SetDefaultArm7Binary(argv[0]);
-			else
-			{
-				// get executable name
-				char *exename = strrchr(argv[0], '/');
-				if (!exename) exename = strrchr(argv[0], '\\');
-				if (exename) exename++; else exename = argv[0];
-		
-				// get path
-				char *path = getenv("PATH");
-				static char exepath[MAXPATHLEN];
-		
-				// find default ARM7 binary
-				for (int pathsep=1; pathsep<2; pathsep++)
-				{
-					// check path
-					char *t = strtok(path, pathsep?";":":");
-					while (t)
-					{
-						strcpy(exepath, t);
-						strcat(exepath, "/");
-						if (
-							(strcat(exepath, exename), printf("checking %s\n", exepath), access(exepath, F_OK) == 0) ||
-							(strcat(exepath, ".exe"), printf("checking %s\n", exepath), access(exepath, F_OK) == 0)
-						)
-						{
-							SetDefaultArm7Binary(exepath);
-							break;
-						}
-						t = strtok(0, pathsep?";":":");
-					}
-				}
-			}
-		}
-		
-		if (!arm7filename)
-		{
- 			fprintf(stderr, "Could not find default ARM7 binary.\n");
-			return 1;
-		}
-		
 		Create();
 	}
 
