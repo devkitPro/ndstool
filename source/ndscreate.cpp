@@ -161,9 +161,9 @@ void Create()
 	else
 	{
 		
-		header.arm9_entry_address = defaultArm7entry;
-		header.arm9_ram_address = defaultArm7entry;
-		header.arm9_size = ((default_arm7_size +3) & ~3);
+		header.arm9_entry_address = 0;
+		header.arm9_ram_address = 0;
+		header.arm9_size = 0;
 	}
 
 	// ARM7 binary
