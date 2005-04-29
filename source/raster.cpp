@@ -23,7 +23,7 @@ int CRaster::LoadBMP (char * szFile)
 	bmpfile.read ((char*)&bmih,sizeof (BITMAPINFOHEADER));
 
 	// Check filetype signature
-	if ((bmfh.bfType[0] != 'M') || (bmfh.bfType[1] != 'B')) return 2;		// File is not BMP
+	if ((bmfh.bfType[0] != 'B') || (bmfh.bfType[1] != 'M')) return 2;		// File is not BMP
 
 	// Assign some short variables:
 	BPP=bmih.biBitCount;
