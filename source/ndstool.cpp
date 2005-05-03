@@ -20,8 +20,10 @@ char *bannerfilename = 0;
 char *bannertext = 0;
 char *headerfilename = 0;
 int bannertype;
-unsigned int defaultArm9entry = 0x02004000;
-unsigned int defaultArm7entry = 0x03800000;
+unsigned int arm9RamAddress = 0x02004000;
+unsigned int arm7RamAddress = 0x03800000;
+unsigned int arm9Entry = 0;
+unsigned int arm7Entry = 0;
 
 
 #ifdef _NDSTOOL_P_H
@@ -51,10 +53,13 @@ void Help(char *unknownoption = 0)
 	printf("  ARM9 executable    -9 arm9.bin\n");
 	printf("  ARM7 RAM address   -r7 address                    (optional, 0x for hex)\n");
 	printf("  ARM9 RAM address   -r9 address                    (optional, 0x for hex)\n");
+	printf("  ARM7 RAM entry     -e7 address                    (optional, 0x for hex)\n");
+	printf("  ARM9 RAM entry     -e9 address                    (optional, 0x for hex)\n");
 	printf("  files              -d directory                   (optional)\n");
 	printf("  header             -h header.bin                  (optional)\n");
 	printf("  banner             -b icon.bmp \"title;lines;here\" (optional)\n");
 	printf("  banner binary      -t banner.bin                  (optional)\n");
+	
 	printf("  verbose            -v\n");
 }
 
@@ -166,8 +171,17 @@ int main(int argc, char *argv[])
 				case 'r':	// RAM address
 					switch (argv[a][2])
 					{
-						case '7': defaultArm7entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
-						case '9': defaultArm9entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
+						case '7': arm7RamAddress = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
+						case '9': arm9RamAddress = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
+						default: Help(argv[a]); return 1;
+					}
+					break;
+
+				case 'e':	// entry point
+					switch (argv[a][2])
+					{
+						case '7': arm7Entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
+						case '9': arm9Entry = (argc > a) ? strtoul(argv[++a], 0, 0) : 0; break;
 						default: Help(argv[a]); return 1;
 					}
 					break;
@@ -203,12 +217,8 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
-		// here... lots of hard work was deleted by WinterMute :(
-		// completely unecessary work likely to be the cause of major problems later :P
-
 		Create();
 	}
-
 
 	return 0;
 }

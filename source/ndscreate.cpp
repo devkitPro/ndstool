@@ -143,12 +143,13 @@ void Create()
 	fseek(fNDS, header_size, SEEK_SET);
 
 	// ARM9 binary
+	if (!arm9Entry) arm9Entry = arm9RamAddress;
 	if (arm9filename)
 	{
 		header.arm9_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
 		fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
-		unsigned int entry_address = header.arm9_entry_address; if (!entry_address) entry_address = defaultArm9entry;
-		unsigned int ram_address = header.arm9_ram_address; if (!ram_address) ram_address = defaultArm9entry;
+		unsigned int entry_address = header.arm9_entry_address; if (!entry_address) entry_address = arm9Entry;
+		unsigned int ram_address = header.arm9_ram_address; if (!ram_address) ram_address = arm9RamAddress;
 		unsigned int size = 0;
 		if (HasElfExtension(arm9filename))
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
@@ -167,12 +168,13 @@ void Create()
 	}
 
 	// ARM7 binary
+	if (!arm7Entry) arm7Entry = arm7RamAddress;
+	header.arm7_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
+	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
 	if (arm7filename)
 	{
-		header.arm7_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
-		fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
-		unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = defaultArm7entry;
-		unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = defaultArm7entry;
+		unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = arm7Entry;
+		unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = arm7RamAddress;
 		unsigned int size = 0;
 
 		if (HasElfExtension(arm7filename))
@@ -184,25 +186,25 @@ void Create()
 		header.arm7_ram_address = ram_address;
 		header.arm7_size = ((size + 3) &~ 3);
 	}
-	else
+	else	// default ARM7 binary
 	{
 		fwrite(default_arm7, 1, default_arm7_size, fNDS);
-		header.arm7_entry_address = defaultArm7entry;
-		header.arm7_ram_address = defaultArm7entry;
+		header.arm7_entry_address = arm7Entry;
+		header.arm7_ram_address = arm7RamAddress;
 		header.arm7_size = ((default_arm7_size + 3) & ~3);
 	}
 
 	// banner
 	if (bannerfilename)
 	{
+		header.banner_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
+		fseek(fNDS, header.banner_offset, SEEK_SET);
 		if (bannertype == BANNER_IMAGE)
 		{
 			IconFromBMP();
 		}
 		else
 		{
-			header.banner_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
-			fseek(fNDS, header.banner_offset, SEEK_SET);
 			CopyFromBin(bannerfilename, 0);
 		}
 	}

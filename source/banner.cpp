@@ -73,9 +73,6 @@ void IconFromBMP()
 		fprintf(stderr, "Error: Image should use 8-bit indexed colors\n");
 		exit(1);
 	}
-	header.banner_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
-	fseek(fNDS, header.banner_offset, SEEK_SET);
-
 
 	// initial 32 bytes (0x00)
 	for(int i = 0; i < 32; i++) {
