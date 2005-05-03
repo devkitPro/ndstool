@@ -20,7 +20,7 @@ char *bannerfilename = 0;
 char *bannertext = 0;
 char *headerfilename = 0;
 int bannertype;
-unsigned int arm9RamAddress = 0x02004000;
+unsigned int arm9RamAddress = 0x02000000;
 unsigned int arm7RamAddress = 0x03800000;
 unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
