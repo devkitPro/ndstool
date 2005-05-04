@@ -138,6 +138,9 @@ all: clean $(BUILD)
 run: $(OUTPUT)
 	@echo $(OUTPUT)
 
+install:
+	cp  --target-directory=$(PREFIX) $(OUTPUT)$(EXEEXT)
+
 #---------------------------------------------------------------------------------
 else
 
