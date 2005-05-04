@@ -6,8 +6,8 @@ struct Header
 	char gamecode[0x4];
 	unsigned char makercode[2];
 	unsigned char unitcode;
-	unsigned char devicetype;		// type of device in the game card
-	unsigned char devicecap;		// capacity
+	unsigned char devicetype;						// type of device in the game card
+	unsigned char devicecap;						// device capacity (1<<n Mbit)
 	unsigned char reserved1[0x9];
 	unsigned char romversion;
 	unsigned char reserved2;
@@ -31,13 +31,13 @@ struct Header
 	unsigned_int banner_offset;
 	unsigned_short secure_area_crc;
 	unsigned_short rom_control_info2;
-	unsigned_int offset_0x70;
-	unsigned_int offset_0x74;
-	unsigned_int offset_0x78;
-	unsigned_int offset_0x7C;
+	unsigned_int offset_0x70;						// ?
+	unsigned_int offset_0x74;						// ?
+	unsigned_int offset_0x78;						// unique ID for homebrew
+	unsigned_int offset_0x7C;						// unique ID for homebrew
 	unsigned_int application_end_offset;			// rom size
 	unsigned_int rom_header_size;
-	unsigned_int offset_0x88;
+	unsigned_int offset_0x88;						// reserved... ?
 	unsigned_int offset_0x8C;
 	unsigned_int offset_0x90;
 	unsigned_int offset_0x94;

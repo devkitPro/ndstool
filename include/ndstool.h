@@ -9,7 +9,7 @@
 #include "little.h"
 #include "header.h"
 
-#define VER			"1.12"
+#define VER			"1.13"
 
 struct Tree
 {
@@ -49,6 +49,7 @@ extern char *bannerfilename;
 extern char *bannertext;
 extern int bannertype;
 extern char *headerfilename;
+extern char *uniquefilename;
 extern unsigned int arm9RamAddress;
 extern unsigned int arm7RamAddress;
 extern unsigned int arm9Entry;

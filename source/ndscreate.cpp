@@ -1,5 +1,6 @@
 #include "ndstool.h"
 #include "default_arm7.h"
+#include <time.h>
 
 /*
  * HasElfExtension
@@ -261,6 +262,32 @@ void Create()
 	int pad = ((ftell(fNDS) + 0x1FF) &~ 0x1FF) - ftell(fNDS);	// align to 512 bytes
 	while (pad--) fputc(0, fNDS);
 	header.application_end_offset = ftell(fNDS);
+
+	// unique ID
+	if (uniquefilename)
+	{
+		unsigned_int id[2];
+		FILE *f = fopen(uniquefilename, "rb");
+		if (f)
+		{
+			fread(&id[0], sizeof(id[0]), 1, f);
+			fread(&id[1], sizeof(id[1]), 1, f);
+		}
+		else
+		{
+			f = fopen(uniquefilename, "wb");
+			if (!f) { fprintf(stderr, "Cannot open file '%s'.\n", uniquefilename); exit(1); }
+			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[1] ^ VER[3] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm9_size);
+			id[0] = (rand()<<15) ^ rand() ^ header.arm7_size;
+			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[0] ^ VER[2] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm7_size);
+			fwrite(&id[0], sizeof(id[0]), 1, f);
+			id[1] = (rand()<<30) ^ (rand()<<15) ^ rand() ^ header.arm9_size;
+			fwrite(&id[1], sizeof(id[1]), 1, f);
+		}
+		fclose(f);
+		header.offset_0x78 = id[0];
+		header.offset_0x7C = id[1];
+	}
 
 	// header
 	header.logo_crc = CalcLogoCRC();

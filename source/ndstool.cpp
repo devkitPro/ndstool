@@ -19,16 +19,12 @@ char *filerootdir = 0;
 char *bannerfilename = 0;
 char *bannertext = 0;
 char *headerfilename = 0;
+char *uniquefilename = 0;
 int bannertype;
 unsigned int arm9RamAddress = 0x02000000;
 unsigned int arm7RamAddress = 0x03800000;
 unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
-
-
-#ifdef _NDSTOOL_P_H
-	#include "ndstool.p.h"
-#endif
 
 /*
  * Help
@@ -43,9 +39,6 @@ void Help(char *unknownoption = 0)
 	printf("Show header:         -i game.nds\n");
 	printf("Fix header CRC       -f game.nds\n");
 	printf("List files:          -l game.nds\n");
-#ifdef _NDSTOOL_P_H
-	printf("Patch header:        -p game.nds        (only for DarkFader)\n");
-#endif
 	printf("Create               -c game.nds\n");
 	printf("Extract              -x game.nds\n");
 	printf("Create/Extract options:\n");
@@ -59,7 +52,7 @@ void Help(char *unknownoption = 0)
 	printf("  header             -h header.bin                  (optional)\n");
 	printf("  banner             -b icon.bmp \"title;lines;here\" (optional)\n");
 	printf("  banner binary      -t banner.bin                  (optional)\n");
-	
+	printf("  unique ID filename -u game.uid                    (optional, auto generated)\n");
 	printf("  verbose            -v\n");
 }
 
@@ -116,16 +109,6 @@ int main(int argc, char *argv[])
 					return 0;
 				}
 
-#ifdef _NDSTOOL_P_H
-				case 'p':	// patch
-				{
-					ndsfilename = (argc > a) ? argv[++a] : 0;
-					char *outfilename = (argc > a) ? argv[++a] : 0;
-					Patch(ndsfilename, outfilename);
-					return 0;
-				}
-#endif
-
 				///
 
 				case 'x':	// extract
@@ -162,6 +145,10 @@ int main(int argc, char *argv[])
 
 				case 'h':	// load header
 					headerfilename = (argc > a) ? argv[++a] : 0;
+					break;
+
+				case 'u':	// unique ID file
+					uniquefilename = (argc > a) ? argv[++a] : 0;
 					break;
 
 				case 'v':	// verbose
