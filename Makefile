@@ -17,14 +17,12 @@ TARGET		:=	ndstool
 BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
-
-# Revert these changes again & I'll remove your CVS access
 DATA		:=	data
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-DEBUGFLAGS	:= -static -s
+DEBUGFLAGS	:= -s
 
 
 UNAME := $(shell uname -s)
@@ -42,22 +40,14 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 endif
 
 ifneq (,$(findstring CYGWIN,$(UNAME)))
-	CFLAGS += -mno-cygwin
-	LDFLAGS += -mno-cygwin
-	PLATFORM		:= win32
-	EXEEXT			:= .exe
+	CFLAGS		+= -mno-cygwin
+	LDFLAGS		+= -mno-cygwin
+	EXEEXT		:= .exe
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
-	PLATFORM		:=	linux
-	EXEEXT			:=
+	LDFLAGS 	+= -static
 endif
-
-ifneq (,$(findstring Darwin,$(UNAME)))
-	PLATFORM		:= OSX
-	EXEEXT			:=
-endif
-
 
 
 #---------------------------------------------------------------------------------
@@ -82,7 +72,8 @@ export OUTPUTDIR:=	$(CURDIR)
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+					$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
+					$(CURDIR)/DefaultArm7
 
 export CC		:=	$(PREFIX)gcc
 export CXX		:=	$(PREFIX)g++
@@ -95,7 +86,7 @@ export OBJCOPY	:=	$(PREFIX)objcopy
 CFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES		:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
+BINFILES		:=	default_arm7.bin
 BMPFILES		:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bmp)))
 
 export OFILES	:= $(BINFILES:.bin=.o) $(BMPFILES:.bmp=.o)  $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
@@ -124,12 +115,13 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
+	@make --no-print-directory -C DefaultArm7
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD)
+	@rm -fr $(BUILD) *.exe
 
 #---------------------------------------------------------------------------------
 all: clean $(BUILD)
