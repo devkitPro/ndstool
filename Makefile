@@ -132,7 +132,7 @@ run: $(OUTPUT)
 	@echo $(OUTPUT)
 
 install:
-	cp  --target-directory=$(PREFIX) $(OUTPUT)$(EXEEXT)
+	cp  $(OUTPUT)$(EXEEXT) $(PREFIX)
 
 #---------------------------------------------------------------------------------
 else
