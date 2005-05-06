@@ -9,7 +9,7 @@ struct Banner
 {
 	unsigned_short version;
 	unsigned_short crc;
-	unsigned reserved[28];
+	unsigned char reserved[28];
 	unsigned char tile_data[4][4][8][4];
 	unsigned_short palette[16];
 	unsigned_short title[6][128];
