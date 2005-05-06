@@ -145,7 +145,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT): $(OFILES)
 	@echo linking
 	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $(OUTPUT)$(EXEEXT)
-	@( cd $(OUTPUTDIR); upx -9 $(TARGET)$(EXEEXT) )
+#	@( cd $(OUTPUTDIR); upx -9 $(TARGET)$(EXEEXT) )
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
