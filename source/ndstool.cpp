@@ -51,7 +51,7 @@ void Help(char *unknownoption = 0)
 	printf("  files              -d directory                   (optional)\n");
 	printf("  header             -h header.bin                  (optional)\n");
 	printf("  banner             -b icon.bmp \"title;lines;here\" (optional)\n");
-	printf("  banner binary      -t banner.bin                  (optional)\n");
+	printf("  banner binary      -t banner.bnr                  (optional)\n");
 	printf("  unique ID filename -u game.uid                    (optional, auto generated)\n");
 	printf("  verbose            -v\n");
 }

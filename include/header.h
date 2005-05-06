@@ -84,7 +84,7 @@ extern int NumCountries;
 extern Maker makers[];
 extern int NumMakers;
 
-
+unsigned short CalcCRC(unsigned char *data, unsigned int length);
 unsigned short CalcHeaderCRC();
 unsigned short CalcLogoCRC();
 unsigned short CalcSecureAreaCRC();
