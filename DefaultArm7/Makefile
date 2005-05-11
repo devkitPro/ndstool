@@ -16,7 +16,7 @@ INCLUDES	:=	include build
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-mthumb -mthumb-interwork
+ARCH	:=	-marm -mthumb-interwork
 
 CFLAGS	:=	-g -Wall -O2\
  		-mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer\

@@ -1,16 +1,16 @@
 [Project ID]
 Signature=UE Proj: v.1
 [Open Files]
-Open File0=
-Open File Pos0=708
-Open File Line0=0
-Open File Window Pos0=2,3,-1,-1,-4,-23,0,0,840,394
-Open File1=
-Open File Pos1=2545
-Open File Line1=1568
-Active File Index=0
-Open File Window Pos1=2,3,-1,-1,-4,-23,110,110,954,508
-Open File2=C:\devkitARM_r11\arm-elf\lib\ds_arm9_crt0.s
+Open File0=C:\projects\devkitPro\buildscripts\tools\nds\ndstool\DefaultArm7\source\main.c
+Open File Pos0=285
+Open File Line0=3030
+Open File Window Pos0=0,1,-1,-1,-4,-23,0,0,873,440
+Open File1=C:\DOCUME~1\DAVEMN~1.000\LOCALS~1\Temp\Rar$DI02.213\Gui.cc
+Open File Pos1=0
+Open File Line1=708
+Active File Index=1
+Open File Window Pos1=2,3,-1,-1,-4,-23,22,22,899,466
+Open File2=
 Open File Pos2=1209
 Open File Line2=285
 Open File Window Pos2=0,1,-1,-1,-4,-23,132,132,976,530
@@ -19,9 +19,9 @@ Open File Pos3=2199
 Open File Line3=2363
 Open File Window Pos3=0,1,-1,-1,-4,-23,176,176,1020,574
 Open File4=
-Active File Display Mode=-1
+Active File Display Mode=3
 [File View]
-Current Select=Project Files
+Current Select=Project Files\source\main.c
 Scroll Position=0
 [Project Information]
 Filter=*.*
