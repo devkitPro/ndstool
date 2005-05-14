@@ -32,7 +32,7 @@ CFLAGS	+=	$(INCLUDE)
 
 CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
 
-LDFLAGS	=	$(DEBUGFLAGS) -Wl,-Map,$(TARGET).map
+LDFLAGS	=	$(DEBUGFLAGS)
 
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM		:= win32
