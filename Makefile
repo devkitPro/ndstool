@@ -59,7 +59,7 @@ LIBS	:= -lelf
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= /usr/local
+LIBDIRS	:= /usr/local /c/cygwin/usr/local
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
@@ -145,7 +145,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT): $(OFILES)
 	@echo linking
 	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $(OUTPUT)$(EXEEXT)
-#	@( cd $(OUTPUTDIR); upx -9 $(TARGET)$(EXEEXT) )
+	-@( cd $(OUTPUTDIR); upx -q -9 $(TARGET)$(EXEEXT) )
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
