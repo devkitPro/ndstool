@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); exit(1); }
 	#endif
 
-	printf("Nintendo DS rom tool "VER" by Rafael Vuijk (aka DarkFader)\n\n");
+	printf("Nintendo DS rom tool "VER" - %s by Rafael Vuijk (aka DarkFader)\n",__DATE__);
 	if (argc < 2) { Help(); return 0; }
 
 	// initialize default header
