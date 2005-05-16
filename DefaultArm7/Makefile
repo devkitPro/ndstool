@@ -28,10 +28,6 @@ CFLAGS	+=	$(INCLUDE) -DARM7
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) -mno-fpu -Wl,-Map,$(notdir $*).map
 
-#---------------------------------------------------------------------------------
-# path to tools - this can be deleted if you set the path in windows
-#---------------------------------------------------------------------------------
-export PATH		:=	$(DEVKITARM)/bin:$(PATH)
  
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
