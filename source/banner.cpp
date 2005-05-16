@@ -41,18 +41,9 @@ void IconFromBMP()
 {
 	CRaster bmp;
 	int rval = bmp.LoadBMP(bannerfilename);
-	if (rval == 1) { printf("Error: Couldn't open icon file\n"); exit(1); }
-	if (rval == 2) { printf("Error: File is not BMP\n"); exit(1); }
+	if (rval < 0) exit(1);
 
-	if (verbose)
-	{
-		printf("Size: %i x %i\n", (int)bmp.Width, (int)bmp.Height);
-		printf("Bits per pixel: %i\n", (int)bmp.BPP);
-		printf("Colors used: %i\n", (int)bmp.pbmi->bmiHeader.biClrUsed);
-	}
-
-	if (bmp.Width != 32 || bmp.Height != 32) { fprintf(stderr, "Error: Image should be 32 x 32\n"); exit(1); }
-	if (bmp.BPP != 8) { fprintf(stderr, "Error: Image should use 8-bit indexed colors\n"); exit(1); }
+	if (bmp.width != 32 || bmp.height != 32) { fprintf(stderr, "Image should be 32 x 32.\n"); exit(1); }
 
 	Banner banner;
 	memset(&banner, 0, sizeof(banner));
@@ -66,11 +57,11 @@ void IconFromBMP()
 		{
 			for (int y=0; y<8; y++)
 			{
-				for (int x=0; x<4; x++)
+				for (int x=0; x<8; x+=2)
 				{
-					unsigned char b0 = bmp.Raster[row * 64 * 4 + y * 8 * 4 + (x * 2 + col * 8)];
-					unsigned char b1 = bmp.Raster[row * 64 * 4 + y * 8 * 4 + (x * 2 + 1 + col * 8)];
-					banner.tile_data[row][col][y][x] = ((b1 & 0xF) << 4) | (b0 & 0xF);
+					unsigned char b0 = bmp[row*8 + y][col*8 + x + 0];
+					unsigned char b1 = bmp[row*8 + y][col*8 + x + 1];
+					banner.tile_data[row][col][y][x/2] = (b1 << 4) | b0;
 				}
 			}
 		}
@@ -79,7 +70,7 @@ void IconFromBMP()
 	// palette
 	for (int i = 0; i < 16; i++)
 	{
-		banner.palette[i] = RGBQuadToRGB16(bmp.Palette[i]);
+		banner.palette[i] = RGBQuadToRGB16(bmp.palette[i]);
 	}
 
 	// put title

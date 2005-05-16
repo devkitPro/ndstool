@@ -1,63 +1,54 @@
-// Code taken from: BMP LOAD EXAMPLE by Juan Soulie <jsoulie@cplusplus.com>
-// Modified by natrium42 <natrium@gmail.com>
-
 #include "ndstool.h"
 #include "raster.h"
 
 
-// **********
-// CRaster::LoadBMPFile (FileName);
-//   - loads a BMP file into a CRaster object
-//   * supports non-RLE-compressed files of 1, 2, 4, 8 & 24 bits-per-pixel
-int CRaster::LoadBMP (char * szFile)
+int CRaster::LoadBMP(char *filename)
 {
+	// open file
+	FILE *f = fopen(filename, "rb");
+	if (!f) { fprintf(stderr, "Could not open '%s'.\n", bannerfilename); return -1; }
+
+	// load bitmap fileheader & infoheader
 	BITMAPFILEHEADER bmfh;
-	BITMAPINFOHEADER bmih;
+	fread((char*)&bmfh, 1, sizeof(bmfh), f);
+	BITMAPINFO bmi;
+	fread((char*)&bmi, 1, sizeof(bmi), f);
+	BITMAPINFOHEADER &bmih = bmi.bmiHeader;
+	memcpy(palette, bmi.bmiColors, sizeof(palette));
 
-	// Open file.
-	ifstream bmpfile (szFile , ios::in | ios::binary);
-	if (! bmpfile.is_open()) return 1;		// Error opening file
+	// check filetype signature
+	if ((bmfh.bfType[0] != 'B') || (bmfh.bfType[1] != 'M')) { fprintf(stderr, "Not a bitmap file.\n"); return -2; }
+	if (bmih.biBitCount > 8) { fprintf(stderr, "Bitmap must have a palette.\n"); return -3; }	
 
-	// Load bitmap fileheader & infoheader
-	bmpfile.read ((char*)&bmfh,sizeof (BITMAPFILEHEADER));
-	bmpfile.read ((char*)&bmih,sizeof (BITMAPINFOHEADER));
+	// assign some short variables:
+	width = bmih.biWidth;
+	height = (bmih.biHeight > 0) ? (int)bmih.biHeight : -(int)bmih.biHeight; // absoulte value
+	int pitch = width * bmih.biBitCount / 8;
+	pitch += (4 - pitch%4) % 4;
 
-	// Check filetype signature
-	if ((bmfh.bfType[0] != 'B') || (bmfh.bfType[1] != 'M')) return 2;		// File is not BMP
-
-	// Assign some short variables:
-	BPP=bmih.biBitCount;
-	Width=bmih.biWidth;
-	Height=(bmih.biHeight>0) ? (int)bmih.biHeight : -(int)bmih.biHeight; // absoulte value
-	BytesPerRow = Width * BPP / 8;
-	BytesPerRow += (4-BytesPerRow%4) % 4;	// int alignment
-
-	// If BPP aren't 24, load Palette:
-	if (BPP==24) pbmi=(BITMAPINFO*)new char [sizeof(BITMAPINFO)];
-	else
+	// load raster
+	unsigned int pixelsPerByte = 8 / bmih.biBitCount;
+	unsigned int biBitCount_mask = (1<<bmih.biBitCount)-1;
+	raster = new unsigned char [width * height];
+	for (unsigned int y=0; y<height; y++)
 	{
-		pbmi=(BITMAPINFO*) new char[sizeof(BITMAPINFOHEADER)+(1<<BPP)*sizeof(RGBQUAD)];
-		Palette=(RGBQUAD*)((char*)pbmi+sizeof(BITMAPINFOHEADER));
-		bmpfile.read ((char*)Palette,sizeof (RGBQUAD) * (1<<BPP));
+		if (bmih.biHeight > 0)		// if height is positive the bmp is bottom-up, read it reversed
+			fseek(f, bmfh.bfOffBits + pitch*(height-1-y), SEEK_SET);
+		else
+			fseek(f, bmfh.bfOffBits + pitch*y, SEEK_SET);
+		for (unsigned int x=0; x<width; x+=pixelsPerByte)
+		{
+			unsigned char data = fgetc(f);
+			unsigned int shift = 8;
+			for (unsigned int p=0; p<pixelsPerByte; p++)
+			{
+				shift -= bmih.biBitCount;
+				(*this)[y][x+p] = data >> shift & biBitCount_mask;
+			}
+		}
 	}
-	pbmi->bmiHeader=bmih;
 
-	// Load Raster
-	bmpfile.seekg (bmfh.bfOffBits,ios::beg);
-
-	Raster = new char[BytesPerRow*Height];
-
-	// (if height is positive the bmp is bottom-up, read it reversed)
-	if (bmih.biHeight>0)
-		for (int n=Height-1;n>=0;n--)
-			bmpfile.read (Raster+BytesPerRow*n,BytesPerRow);
-	else
-		bmpfile.read (Raster,BytesPerRow*Height);
-
-	// so, we always have a up-bottom raster (that is negative height for windows):
-	pbmi->bmiHeader.biHeight=-Height;
-
-	bmpfile.close();
+	fclose(f);
 
 	return 0;
 }

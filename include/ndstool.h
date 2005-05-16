@@ -50,6 +50,7 @@ extern char *bannertext;
 extern int bannertype;
 extern char *headerfilename;
 extern char *uniquefilename;
+extern char *logofilename;
 extern unsigned int arm9RamAddress;
 extern unsigned int arm7RamAddress;
 extern unsigned int arm9Entry;

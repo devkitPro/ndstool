@@ -20,9 +20,10 @@ char *bannerfilename = 0;
 char *bannertext = 0;
 char *headerfilename = 0;
 char *uniquefilename = 0;
+char *logofilename = 0;
 int bannertype;
-unsigned int arm9RamAddress = 0x02000000;
-unsigned int arm7RamAddress = 0x03800000;
+unsigned int arm9RamAddress = 0;
+unsigned int arm7RamAddress = 0;
 unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
 
@@ -49,9 +50,10 @@ void Help(char *unknownoption = 0)
 	printf("  ARM7 RAM entry     -e7 address                    (optional, 0x for hex)\n");
 	printf("  ARM9 RAM entry     -e9 address                    (optional, 0x for hex)\n");
 	printf("  files              -d directory                   (optional)\n");
-	printf("  header             -h header.bin                  (optional)\n");
+	printf("  header template    -h header.bin                  (optional)\n");
 	printf("  banner             -b icon.bmp \"title;lines;here\" (optional)\n");
 	printf("  banner binary      -t banner.bnr                  (optional)\n");
+	printf("  logo binary        -o logo.bin                    (optional)\n");
 	printf("  unique ID filename -u game.uid                    (optional, auto generated)\n");
 	printf("  verbose            -v\n");
 }
@@ -67,15 +69,6 @@ int main(int argc, char *argv[])
 
 	printf("Nintendo DS rom tool "VER" - %s by Rafael Vuijk (aka DarkFader)\n",__DATE__);
 	if (argc < 2) { Help(); return 0; }
-
-	// initialize default header
-	memset(&header, 0, 0x200);
-	header.gamecode[0] = 'A';
-	header.gamecode[1] = 'X';
-	header.gamecode[2] = 'X';
-	header.gamecode[3] = 'E';
-	header.reserved2 = 0x04;		// autostart
-	for (unsigned int i=0; i<sizeof(header.logo); i++) header.logo[i] = ~logo[i];
 
 	// what to do
 	bool extract = false;
@@ -143,6 +136,10 @@ int main(int argc, char *argv[])
 					bannertext = (argc > a) ? argv[++a] : 0;
 					break;
 
+				case 'o':
+					logofilename = (argc > a) ? argv[++a] : 0;
+					break;
+
 				case 'h':	// load header
 					headerfilename = (argc > a) ? argv[++a] : 0;
 					break;
@@ -185,8 +182,6 @@ int main(int argc, char *argv[])
 			Help();
 			return 0;
 		}
-
-		
 	}
 
 	if (extract && create)
@@ -204,6 +199,14 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
+		if (!arm9RamAddress && arm9Entry) arm9RamAddress = arm9Entry;
+		if (!arm9Entry && arm9RamAddress) arm9Entry = arm9RamAddress;
+		if (!arm9RamAddress) arm9RamAddress = arm9Entry = 0x02000000;
+		
+		if (!arm7RamAddress && arm7Entry) arm7RamAddress = arm7Entry;
+		if (!arm7Entry && arm7RamAddress) arm7Entry = arm7RamAddress;
+		if (!arm7RamAddress) arm7RamAddress = arm7Entry = 0x03800000;
+
 		Create();
 	}
 

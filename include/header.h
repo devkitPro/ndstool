@@ -76,8 +76,6 @@ struct Maker
 	char *name;
 };
 
-extern const unsigned char logo[];
-
 extern Country countries[];
 extern int NumCountries;
 
