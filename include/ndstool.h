@@ -9,7 +9,7 @@
 #include "little.h"
 #include "header.h"
 
-#define VER			"1.15"
+#define VER			"1.16"
 
 struct Tree
 {
@@ -55,6 +55,8 @@ extern unsigned int arm9RamAddress;
 extern unsigned int arm7RamAddress;
 extern unsigned int arm9Entry;
 extern unsigned int arm7Entry;
+extern char *makercode;
+extern char *gamecode;
 
 // ndscreate
 unsigned int WalkTree(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id);

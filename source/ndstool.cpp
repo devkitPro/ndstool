@@ -21,6 +21,9 @@ char *bannertext = 0;
 char *headerfilename = 0;
 char *uniquefilename = 0;
 char *logofilename = 0;
+char *makercode = 0;
+char *gamecode = 0;
+
 int bannertype;
 unsigned int arm9RamAddress = 0;
 unsigned int arm7RamAddress = 0;
@@ -54,6 +57,8 @@ void Help(char *unknownoption = 0)
 	printf("  banner             -b icon.bmp \"title;lines;here\" (optional)\n");
 	printf("  banner binary      -t banner.bnr                  (optional)\n");
 	printf("  logo binary        -o logo.bin                    (optional)\n");
+	printf("  maker code         -m code                        (optional)\n");
+	printf("  game code          -g code                        (optional)\n");
 	printf("  unique ID filename -u game.uid                    (optional, auto generated)\n");
 	printf("  verbose            -v\n");
 }
@@ -169,6 +174,24 @@ int main(int argc, char *argv[])
 						default: Help(argv[a]); return 1;
 					}
 					break;
+
+				case 'm':	// maker code
+					makercode = (argc > a) ? argv[++a] : 0;
+					if (strlen(makercode) != 2) {
+						printf("maker code must be 2 characters!\n");
+						exit(1);
+					}
+					break;
+				
+				case 'g':	// game code
+					gamecode = (argc > a) ? argv[++a] : 0;
+					if (strlen(gamecode) != 4) {
+						printf("game code must be 4 characters!\n");
+						exit(1);
+					}
+					break;
+					
+
 
 				default:
 				{

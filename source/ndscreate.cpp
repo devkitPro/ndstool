@@ -330,6 +330,8 @@ void Create()
 		header.offset_0x7C = id[1];
 	}
 
+	strncpy(header.gamecode, gamecode, 4);
+	strncpy((char *)header.makercode, makercode, 2);
 	// header
 	header.logo_crc = CalcLogoCRC();
 	header.header_crc = CalcHeaderCRC();
