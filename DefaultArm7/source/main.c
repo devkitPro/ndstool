@@ -141,7 +141,7 @@ int main(int argc, char ** argv) {
 	rtcReset();
 
 	//enable sound
-	SOUND_CR = SCHANNEL_ENABLE | SOUND_VOL(0x7F);
+	SOUND_CR = SOUND_ENABLE | SOUND_VOL(0x7F);
 	IPC->soundData = 0;
  
 	// Set up the interrupt handler
