@@ -95,12 +95,18 @@ int LogoCompress(unsigned char *src, unsigned char *dst)
 
 void LogoDiff(unsigned char *srcp, unsigned char *dstp)
 {
-    *((unsigned int *)dstp)++ = 0xD0 << 8 | 0x80 | 2;	// header
+
+	unsigned int * intp_dst = (unsigned int *)dstp;
+
+	*(intp_dst)++ = 0xD0 << 8 | 0x80 | 2;	// header
+
+	unsigned short * shortp_dst = (unsigned short *)intp_dst;
+	unsigned short * shortp_src = (unsigned short *)srcp;
 	unsigned short prev = 0;
     for (unsigned int i=0; i<0xD0; i+=2)
     {
-        *((unsigned short *)dstp)++ = *((unsigned short *)srcp) - prev;
-        prev = *((unsigned short *)srcp)++;
+        *(shortp_dst)++ = *(shortp_src) - prev;
+        prev = *(shortp_src)++;
     }
 }
 
