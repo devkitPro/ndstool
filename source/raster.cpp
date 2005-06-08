@@ -6,7 +6,7 @@ int CRaster::LoadBMP(char *filename)
 {
 	// open file
 	FILE *f = fopen(filename, "rb");
-	if (!f) { fprintf(stderr, "Could not open '%s'.\n", bannerfilename); return -1; }
+	if (!f) { fprintf(stderr, "Could not open '%s'.\n", filename); return -1; }
 
 	// load bitmap fileheader & infoheader
 	BITMAPFILEHEADER bmfh;

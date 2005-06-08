@@ -1,5 +1,7 @@
 #include "ndstool.h"
 #include "default_arm7.h"
+#include "logo.h"
+#include "raster.h"
 #include <time.h>
 
 /*
@@ -163,16 +165,27 @@ void Create()
 		header.gamecode[2] = 'X';
 		header.gamecode[3] = 'E';
 		header.reserved2 = 0x04;		// autostart
+		unsigned char romcontrol[] = { 0x00,0x60,0x58,0x00,0xF8,0x08,0x18,0x00 };
+		memcpy(((unsigned char *)&header) + 0x60, romcontrol, sizeof(romcontrol));
 	}
 
 	// load a logo
 	if (logofilename)
 	{
-		// TODO: check bin or bmp
-		FILE *fi = fopen(logofilename, "rb");
-		if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", logofilename); exit(1); }
-		fread(&header.logo, 1, 156, fi);
-		fclose(fi);
+		char *p = strrchr(logofilename, '.');
+		if (!strcmp(p, ".bmp"))
+		{
+			CRaster raster;
+			if (raster.LoadBMP(logofilename) < 0) exit(1);
+			if (LogoConvert(raster.raster, header.logo) < 0) exit(1);
+		}
+		else
+		{
+			FILE *fi = fopen(logofilename, "rb");
+			if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", logofilename); exit(1); }
+			fread(&header.logo, 1, 156, fi);
+			fclose(fi);
+		}
 	}
 	else
 	{
@@ -185,13 +198,17 @@ void Create()
 	fseek(fNDS, header_size, SEEK_SET);
 
 	// ARM9 binary
-	if (!arm9Entry) arm9Entry = arm9RamAddress;
 	if (arm9filename)
 	{
 		header.arm9_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
 		fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
-		unsigned int entry_address = header.arm9_entry_address; if (!entry_address) entry_address = arm9Entry;
-		unsigned int ram_address = header.arm9_ram_address; if (!ram_address) ram_address = arm9RamAddress;
+
+		unsigned int entry_address = arm9Entry ? arm9Entry : (unsigned int)header.arm9_entry_address;		// template
+		unsigned int ram_address = arm9RamAddress ? arm9RamAddress : (unsigned int)header.arm9_ram_address;		// template
+		if (!ram_address && entry_address) ram_address = entry_address;
+		if (!entry_address && ram_address) entry_address = ram_address;
+		if (!ram_address) { ram_address = entry_address = 0x02000000; }
+
 		unsigned int size = 0;
 		if (HasElfExtension(arm9filename))
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
@@ -203,22 +220,24 @@ void Create()
 	}
 	else
 	{
-		
+		// shouldn't happen :)
 		header.arm9_entry_address = 0;
 		header.arm9_ram_address = 0;
 		header.arm9_size = 0;
 	}
 
 	// ARM7 binary
-	if (!arm7Entry) arm7Entry = arm7RamAddress;
 	header.arm7_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
 	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
 	if (arm7filename)
 	{
-		unsigned int entry_address = header.arm7_entry_address; if (!entry_address) entry_address = arm7Entry;
-		unsigned int ram_address = header.arm7_ram_address; if (!ram_address) ram_address = arm7RamAddress;
-		unsigned int size = 0;
+		unsigned int entry_address = arm7Entry ? arm7Entry : (unsigned int)header.arm7_entry_address;		// template
+		unsigned int ram_address = arm7RamAddress ? arm7RamAddress : (unsigned int)header.arm7_ram_address;		// template
+		if (!ram_address && entry_address) ram_address = entry_address;
+		if (!entry_address && ram_address) entry_address = ram_address;
+		if (!ram_address) { ram_address = entry_address = 0x03800000; }
 
+		unsigned int size = 0;
 		if (HasElfExtension(arm7filename))
 			CopyFromElf(arm7filename, &entry_address, &ram_address, &size);
 		else
@@ -231,8 +250,8 @@ void Create()
 	else	// default ARM7 binary
 	{
 		fwrite(default_arm7, 1, default_arm7_size, fNDS);
-		header.arm7_entry_address = arm7Entry;
-		header.arm7_ram_address = arm7RamAddress;
+		header.arm7_entry_address = 0x03800000;
+		header.arm7_ram_address = 0x03800000;
 		header.arm7_size = ((default_arm7_size + 3) & ~3);
 	}
 

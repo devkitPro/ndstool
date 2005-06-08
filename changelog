@@ -1,10 +1,12 @@
 Nintendo DS rom tool
 by Rafael Vuijk (aka DarkFader)
 
-additional code
-	natrium42 <natrium@gmail.com>	
+CVS admins / additional code:
+	DarkFader <darkfader@gmail.com>
+	natrium42 <natrium@gmail.com>
 	WinterMute <wntrmute@gmail.com>
 
+v1.17 - custom logo can now be used
 v1.16 - added options to set maker code and game code
 v1.15 - 4bpp support for banner icon, logo
 v1.14 - banner version & CRC

@@ -54,8 +54,9 @@ void Help(char *unknownoption = 0)
 	printf("  ARM9 RAM entry     -e9 address                    (optional, 0x for hex)\n");
 	printf("  files              -d directory                   (optional)\n");
 	printf("  header template    -h header.bin                  (optional)\n");
-	printf("  banner             -b icon.bmp \"title;lines;here\" (optional)\n");
+	printf("  banner bitmap/text -b icon.bmp \"title;lines;here\" (optional)\n");
 	printf("  banner binary      -t banner.bnr                  (optional)\n");
+	printf("  logo bitmap        -o logo.bmp                    (optional)\n");
 	printf("  logo binary        -o logo.bin                    (optional)\n");
 	printf("  maker code         -m code                        (optional)\n");
 	printf("  game code          -g code                        (optional)\n");
@@ -222,14 +223,6 @@ int main(int argc, char *argv[])
 	}
 	else if (create)
 	{
-		if (!arm9RamAddress && arm9Entry) arm9RamAddress = arm9Entry;
-		if (!arm9Entry && arm9RamAddress) arm9Entry = arm9RamAddress;
-		if (!arm9RamAddress) arm9RamAddress = arm9Entry = 0x02000000;
-		
-		if (!arm7RamAddress && arm7Entry) arm7RamAddress = arm7Entry;
-		if (!arm7Entry && arm7RamAddress) arm7Entry = arm7RamAddress;
-		if (!arm7RamAddress) arm7RamAddress = arm7Entry = 0x03800000;
-
 		Create();
 	}
 
