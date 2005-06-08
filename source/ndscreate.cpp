@@ -177,7 +177,8 @@ void Create()
 		{
 			CRaster raster;
 			if (raster.LoadBMP(logofilename) < 0) exit(1);
-			if (LogoConvert(raster.raster, header.logo) < 0) exit(1);
+			unsigned char white = (raster.palette[0].rgbGreen >= 128) ? 0 : 1;
+			if (LogoConvert(raster.raster, header.logo, white) < 0) exit(1);
 		}
 		else
 		{
