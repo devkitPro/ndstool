@@ -17,7 +17,7 @@ DATA		:=	data
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-DEBUGFLAGS	:= -g
+DEBUGFLAGS	:= -s
 
 
 UNAME := $(shell uname -s)
@@ -25,13 +25,14 @@ UNAME := $(shell uname -s)
 CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3 
 CFLAGS	+=	$(INCLUDE)
 
-CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
 
 LDFLAGS	=	$(DEBUGFLAGS)
 
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM		:= win32
 	EXEEXT			:= .exe
+	CFLAGS		+= -mno-cygwin
+	LDFLAGS		+= -mno-cygwin
 endif
 
 ifneq (,$(findstring CYGWIN,$(UNAME)))
@@ -44,6 +45,7 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	LDFLAGS 	+= -static
 endif
 
+CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
