@@ -59,11 +59,13 @@ int LogoCompress(unsigned char *src, unsigned char *dst)
 				data_out |= (lh.value >> b & 1) << outbit;
 				if (outbit == 0)
 				{
-					if (outbytecnt >= 156) return -1;	// error
-					*dst++ = data_out >> 0;
-					*dst++ = data_out >> 8;
-					*dst++ = data_out >> 16;
-					*dst++ = data_out >> 24;
+					if (outbytecnt < 156)
+					{
+						*dst++ = data_out >> 0;
+						*dst++ = data_out >> 8;
+						*dst++ = data_out >> 16;
+						*dst++ = data_out >> 24;
+					}
 					outbytecnt += 4;
 					outbit = 31;
 					data_out = 0;
@@ -78,15 +80,17 @@ int LogoCompress(unsigned char *src, unsigned char *dst)
 
 	if (outbit != 31)
 	{
-		if (outbytecnt >= 156) return -1;	// error
-		*dst++ = data_out >> 0;
-		*dst++ = data_out >> 8;
-		*dst++ = data_out >> 16;
-		*dst++ = data_out >> 24;
+		if (outbytecnt < 156)
+		{
+			*dst++ = data_out >> 0;
+			*dst++ = data_out >> 8;
+			*dst++ = data_out >> 16;
+			*dst++ = data_out >> 24;
+		}
 		outbytecnt += 4;
 	}
-	
-	return 0;
+
+	return 156 - outbytecnt;
 };
 
 void LogoDiff(unsigned char *srcp, unsigned char *dstp)
@@ -127,9 +131,10 @@ int LogoConvert(unsigned char *srcp, unsigned char *dstp, unsigned char white)
 	LogoDiff(bitpacked, diffed);
 
 	// compress
-	if (LogoCompress(diffed, dstp) < 0)
+	int r = LogoCompress(diffed, dstp);
+	if (r < 0)
 	{
-		fprintf(stderr, "Compressed logo is too big. Please simplify.\n");
+		fprintf(stderr, "Compressed logo is %u bytes too big. Please simplify.\n", -r);
 		return -1;
 	}
 	
