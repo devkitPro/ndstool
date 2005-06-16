@@ -9,7 +9,7 @@
 #include "little.h"
 #include "header.h"
 
-#define VER			"1.17"
+#define VER			"1.18"
 
 struct Tree
 {
