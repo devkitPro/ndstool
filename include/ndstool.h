@@ -9,7 +9,7 @@
 #include "little.h"
 #include "header.h"
 
-#define VER			"1.18"
+#define VER			"1.19"
 
 struct Tree
 {
@@ -68,7 +68,3 @@ void ExtractFile(char *filename, unsigned int file_id);
 void ExtractDirectory(char *prefix, unsigned int dir_id);
 void ExtractFiles();
 void Extract(char *outfilename, bool indirect_offset, unsigned int offset, bool indirect_size, unsigned size);
-
-// banner.cpp
-int InsertTitleString(char *String, FILE *file);
-void IconFromBMP();

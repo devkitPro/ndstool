@@ -1,37 +1,28 @@
 #include "ndstool.h"
 #include "raster.h"
+#include "banner.h"
 
-using namespace std;
-
-#pragma pack(1)
-
-struct Banner
-{
-	unsigned_short version;
-	unsigned_short crc;
-	unsigned char reserved[28];
-	unsigned char tile_data[4][4][8][4];
-	unsigned_short palette[16];
-	unsigned_short title[6][128];
-};
-
-#pragma pack()
-
+char *bannerLanguages[] = { "Japanese", "English", "French", "German", "Italian", "Spanish" };
 
 #define RGB16(r,g,b)			((r) | (g<<5) | (b<<10))
 
 /*
  * RGBQuadToRGB16
  */
-unsigned short RGBQuadToRGB16(RGBQUAD quad)
+inline unsigned short RGBQuadToRGB16(RGBQUAD quad)
 {
 	unsigned short r = quad.rgbRed;
 	unsigned short g = quad.rgbGreen;
 	unsigned short b = quad.rgbBlue;
+	return RGB16(r>>3, g>>3, b>>3);
+}
 
-	r >>= 3; g >>= 3; b >>= 3;
-
-	return RGB16(r, g, b);
+/*
+ * CalcBannerCRC
+ */
+unsigned short CalcBannerCRC(Banner &banner)
+{
+	return CalcCRC((unsigned char *)&banner + 32, 0x840 - 32);
 }
 
 /*
@@ -85,7 +76,7 @@ void IconFromBMP()
 	}
 	
 	// calculate CRC
-	banner.crc = CalcCRC((unsigned char *)&banner + 32, 0x840 - 32);
+	banner.crc = CalcBannerCRC(banner);
 
 	fwrite(&banner, 1, sizeof(banner), fNDS);
 }

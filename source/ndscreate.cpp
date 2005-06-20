@@ -1,8 +1,9 @@
+#include <time.h>
 #include "ndstool.h"
 #include "default_arm7.h"
 #include "logo.h"
 #include "raster.h"
-#include <time.h>
+#include "banner.h"
 
 /*
  * default logo
