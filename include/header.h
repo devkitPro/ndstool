@@ -4,7 +4,7 @@ struct Header
 {
 	char title[0xC];
 	char gamecode[0x4];
-	unsigned char makercode[2];
+	char makercode[2];
 	unsigned char unitcode;
 	unsigned char devicetype;						// type of device in the game card
 	unsigned char devicecap;						// device capacity (1<<n Mbit)
