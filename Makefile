@@ -17,7 +17,7 @@ DATA		:=	data
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-DEBUGFLAGS	:= -g
+DEBUGFLAGS	:= -s
 
 
 UNAME := $(shell uname -s)
@@ -142,7 +142,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT): $(OFILES)
 	@echo linking
 	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $(OUTPUT)$(EXEEXT)
-	#-@( cd $(OUTPUTDIR); upx -q -9 $(TARGET)$(EXEEXT) )
+	-@( cd $(OUTPUTDIR); upx -q -9 $(TARGET)$(EXEEXT) )
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
