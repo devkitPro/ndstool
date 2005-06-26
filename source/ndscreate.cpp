@@ -4,6 +4,9 @@
 #include "logo.h"
 #include "raster.h"
 #include "banner.h"
+#include "overlay.h"
+
+unsigned int overlay_files = 0;
 
 /*
  * default logo
@@ -33,43 +36,35 @@ bool HasElfExtension(char *filename)
 }
 
 /*
- * CopyFromFile
- */
-unsigned int CopyFromFile(FILE *fo, char *filename)
-{
-	FILE *fi = fopen(filename, "rb");
-	if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", filename); exit(1); }
-	
-	unsigned char copybuf[1024];
-	unsigned int totalread = 0;
-	while (1)
-	{
-		unsigned int read = fread(copybuf, 1, sizeof(copybuf), fi);
-		totalread += read;
-		fwrite(copybuf, 1, read, fo);
-		if (!read) break;
-	}
-
-	fclose(fi);
-	return totalread;
-}
-
-/*
  * CopyFromBin
  */
-int CopyFromBin(char *binFilename, unsigned int *size = 0)
+int CopyFromBin(char *binFilename, unsigned int *size = 0, unsigned int *size_without_footer = 0)
 {
 	FILE *fi = fopen(binFilename, "rb");
 	if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", binFilename); exit(1); }
-	if (size) *size = 0;
+	unsigned int _size = 0;
 	while (1)
 	{
 		unsigned char buffer[1024];
 		int bytesread = fread(buffer, 1, sizeof(buffer), fi);
 		if (bytesread <= 0) break;
 		fwrite(buffer, 1, bytesread, fNDS);
-		if (size) *size += bytesread;
+		_size += bytesread;
 	}
+	if (size) *size = _size;
+
+	// check footer
+	if (size_without_footer)
+	{
+		fseek(fi, _size - 3*4, SEEK_SET);
+		unsigned_int nitrocode;
+		fread(&nitrocode, sizeof(nitrocode), 1, fi);
+		if (nitrocode == 0xDEC00621)
+			*size_without_footer = _size - 3*4;
+		else
+			*size_without_footer = _size;
+	}
+
 	fclose(fi);
 	return 0;
 }
@@ -149,9 +144,10 @@ void Create()
 	fNDS = fopen(ndsfilename, "wb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 	
-	// header
+	// initial header data
 	if (headerfilename)
 	{
+		// header template
 		FILE *fi = fopen(headerfilename, "rb");
 		if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", headerfilename); exit(1); }
 		fread(&header, 1, 0x200, fi);
@@ -161,13 +157,11 @@ void Create()
 	{
 		// clear header
 		memset(&header, 0, 0x200);
-		header.gamecode[0] = 'A';
-		header.gamecode[1] = 'X';
-		header.gamecode[2] = 'X';
-		header.gamecode[3] = 'E';
+		memcpy(header.gamecode, "####", 4);
 		header.reserved2 = 0x04;		// autostart
 		unsigned char romcontrol[] = { 0x00,0x60,0x58,0x00,0xF8,0x08,0x18,0x00 };
 		memcpy(((unsigned char *)&header) + 0x60, romcontrol, sizeof(romcontrol));
+		*(unsigned_int *)&header = 0xEA00002E;		// for PassMe's that start @ 0x08000000
 	}
 
 	// load a logo
@@ -189,16 +183,48 @@ void Create()
 			fclose(fi);
 		}
 	}
-	else
+	else if (!headerfilename)	// homebrew?
 	{
-		memcpy(header.logo, passme_logo, sizeof(header.logo));
-		memcpy(&header.offset_0xAC, "PASS", 4);
+		memcpy(header.logo, passme_logo, sizeof(header.logo));	// self-contained NDS loader
+		memcpy(&header.offset_0xAC, "PASS", 4);		// automatically start
 	}
 
-	// skip header
+	// unique ID... just for homebrew, not very used... obsolete?
+	if (uniquefilename)
+	{
+		unsigned_int id[2];
+		FILE *f = fopen(uniquefilename, "rb");
+		if (f)
+		{
+			fread(&id[0], sizeof(id[0]), 1, f);
+			fread(&id[1], sizeof(id[1]), 1, f);
+		}
+		else
+		{
+			f = fopen(uniquefilename, "wb");
+			if (!f) { fprintf(stderr, "Cannot open file '%s'.\n", uniquefilename); exit(1); }
+			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[1] ^ VER[3] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm9_size);
+			id[0] = (rand()<<15) ^ rand() ^ header.arm7_size;
+			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[0] ^ VER[2] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm7_size);
+			fwrite(&id[0], sizeof(id[0]), 1, f);
+			id[1] = (rand()<<30) ^ (rand()<<15) ^ rand() ^ header.arm9_size;
+			fwrite(&id[1], sizeof(id[1]), 1, f);
+		}
+		fclose(f);
+		header.offset_0x78 = id[0];
+		header.offset_0x7C = id[1];
+	}
+
+	// game/maker codes
+	if (gamecode) strncpy(header.gamecode, gamecode, 4);
+	if (makercode) strncpy((char *)header.makercode, makercode, 2);
+
+	// header size
 	unsigned int header_size = header.rom_header_size;
 	if (!header_size) { header_size = 0x200; header.rom_header_size = header_size; }
 	fseek(fNDS, header_size, SEEK_SET);
+
+	// --------------------------
 
 	// ARM9 binary
 	if (arm9filename)
@@ -216,18 +242,35 @@ void Create()
 		if (HasElfExtension(arm9filename))
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
 		else
-			CopyFromBin(arm9filename, &size);
+			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
 		header.arm9_size = ((size + 3) &~ 3);
 	}
 	else
 	{
-		// shouldn't happen :)
-		header.arm9_entry_address = 0;
-		header.arm9_ram_address = 0;
-		header.arm9_size = 0;
+		fprintf(stderr, "ARM9 binary file required.\n");
+		exit(1);
 	}
+
+	// ARM9 overlay table
+	if (arm9ovltablefilename)
+	{
+		unsigned_int x1 = 0xDEC00621; fwrite(&x1, sizeof(x1), 1, fNDS);		// ???
+		unsigned_int x2 = 0x00000AD8; fwrite(&x2, sizeof(x2), 1, fNDS);		// ???
+		unsigned_int x3 = 0x00000000; fwrite(&x3, sizeof(x3), 1, fNDS);		// ???
+		
+		header.arm9_overlay_offset = ftell(fNDS);		// do not align
+		fseek(fNDS, header.arm9_overlay_offset, SEEK_SET);
+		unsigned int size = 0;
+		CopyFromBin(arm9ovltablefilename, &size);
+		header.arm9_overlay_size = size;
+		overlay_files += size / sizeof(OverlayEntry);
+		if (!size) header.arm9_overlay_offset = 0;
+	}
+
+	// COULD BE HERE: ARM9 overlay files, no padding before or between. end is padded with 0xFF's and then followed by ARM7 binary
+	// fseek(fNDS, 1388772, SEEK_CUR);		// test for ASME
 
 	// ARM7 binary
 	header.arm7_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
@@ -258,6 +301,27 @@ void Create()
 		header.arm7_size = ((default_arm7_size + 3) & ~3);
 	}
 
+	// ARM7 overlay table
+	if (arm7ovltablefilename)
+	{
+		header.arm7_overlay_offset = ftell(fNDS);		// do not align
+		fseek(fNDS, header.arm7_overlay_offset, SEEK_SET);
+		unsigned int size = 0;
+		CopyFromBin(arm7ovltablefilename, &size);
+		header.arm7_overlay_size = size;
+		overlay_files += size / sizeof(OverlayEntry);
+		if (!size) header.arm7_overlay_offset = 0;
+	}
+
+	// COULD BE HERE: probably ARM7 overlay files, just like for ARM9
+	//
+
+	if (overlay_files && !overlaydir)
+	{
+		fprintf(stderr, "Overlay directory required!.\n");
+		exit(1);
+	}
+
 	// banner
 	if (bannerfilename)
 	{
@@ -276,85 +340,58 @@ void Create()
 	{
 		header.banner_offset = 0;
 	}
-	
-	// filesystem
-	if (filerootdir)
-	{
-		//struct dirent **eps;
-		//int n = scandir("./", &eps, one, alphasort);
-		//printf("%d\n", n);
-		
-		
-		//ExtractDirectory(filerootdir, "/", 0xF000);
-		//ReadDirectory(filerootdir, "/", 0/*first is not parent_id*/, 1);
-		Tree *root = new Tree();
-		ReadDirectory(root, filerootdir);
 
-		_entry_start = 8*directory_count;
-		header.fnt_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;		// align to 512 bytes
-		header.fnt_size = _entry_start + ((file_count + directory_count)*1/*length*/ + total_name_size/*names of both dirs and files*/ + directory_count*1/*end of directory*/);
-		header.fat_offset = (header.fnt_offset + header.fnt_size + 0x1FF) &~ 0x1FF;		// align to 512 bytes;
+	// filesystem
+	{
+		// read directory structure
+		Tree *filetree = new Tree();		// dummy root node 0xF000
+		free_dir_id++;
+		directory_count++;
+		if (filerootdir) ReadDirectory(filetree, filerootdir);	// fill empty directory
+
+		// calculate offsets required for FNT and FAT
+		_entry_start = 8*directory_count;		// names come after directory structs
+		header.fnt_offset = ftell(fNDS);	// not aligned			//(ftell(fNDS) + 0x1FF) &~ 0x1FF;		// align to 512 bytes
+		header.fnt_size =
+			_entry_start +		// directory structs
+			total_name_size +	// total number of name characters for dirs and files
+			directory_count*4 +	// directory: name length (1), dir id (2), end-character (1)
+			file_count*1 +		// files: name length (1)
+			- 3;				// root directory only has an end-character
+		file_count += overlay_files;		// didn't take overlay files into FNT size, but have to be calculated into FAT size
+		//header.fat_offset = (header.fnt_offset + header.fnt_size + 0x1FF) &~ 0x1FF;		// align to 512 bytes;
+		header.fat_offset = (header.fnt_offset + header.fnt_size + 0x3) &~ 0x3;		// align to 4 bytes. should be 0xFF's
+		//header.fat_offset = header.fnt_offset + header.fnt_size;		// not aligned
 		header.fat_size = file_count * 8;		// each entry contains top & bottom offset
 		file_top = header.fat_offset + header.fat_size;
 
-		//DebugTree(root);
-		unsigned int file_end = WalkTree(root, "/", 0xF000, directory_count);
-		fseek(fNDS, file_end, SEEK_SET);
+		// add overlay files
+		for (unsigned int i=0; i<overlay_files; i++)
+		{
+			char s[32]; sprintf(s, OVERLAY_FMT, free_file_id);
+			AddFile(overlaydir, "/", s, free_file_id, 0x3);
+			free_file_id++;		// incremented up to overlay_files
+		}
 
-//		printf("fnt_offset %X\n", (int)header.fnt_offset);
-//		printf("fnt_size %X\n", (int)header.fnt_size);
-//		printf("fat_offset %X\n", (int)header.fat_offset);
-//		printf("fat_size %X\n", (int)header.fat_size);
+		AddDirectory(filetree, "/", 0xF000, directory_count, 0x3);
+		fseek(fNDS, file_end, SEEK_SET);
 
 		if (verbose)
 		{
-			printf("%d directories.\n", directory_count);
-			printf("%d files.\n", file_count);
-			//printf("%d total_name_size\n", total_name_size);
+			printf("%u directories.\n", directory_count);
+			printf("%u normal files.\n", file_count - overlay_files);
+			printf("%u overlay files.\n", overlay_files);
 		}
 	}
-	else
-	{
-		header.fnt_offset = 0;
-		header.fnt_size = 0;
-		header.fat_offset = 0;
-		header.fat_size = 0;
-	}
 
-	// pad end of file
-	int pad = ((ftell(fNDS) + 0x1FF) &~ 0x1FF) - ftell(fNDS);	// align to 512 bytes
+	// --------------------------
+
+	// application end offset
+	int pad = ((ftell(fNDS) + 0x3) &~ 0x3) - ftell(fNDS);	// align to 4 bytes
 	while (pad--) fputc(0, fNDS);
 	header.application_end_offset = ftell(fNDS);
 
-	// unique ID
-	if (uniquefilename)
-	{
-		unsigned_int id[2];
-		FILE *f = fopen(uniquefilename, "rb");
-		if (f)
-		{
-			fread(&id[0], sizeof(id[0]), 1, f);
-			fread(&id[1], sizeof(id[1]), 1, f);
-		}
-		else
-		{
-			f = fopen(uniquefilename, "wb");
-			if (!f) { fprintf(stderr, "Cannot open file '%s'.\n", uniquefilename); exit(1); }
-			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[1] ^ VER[3] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm9_size);
-			id[0] = (rand()<<15) ^ rand() ^ header.arm7_size;
-			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[0] ^ VER[2] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm7_size);
-			fwrite(&id[0], sizeof(id[0]), 1, f);
-			id[1] = (rand()<<30) ^ (rand()<<15) ^ rand() ^ header.arm9_size;
-			fwrite(&id[1], sizeof(id[1]), 1, f);
-		}
-		fclose(f);
-		header.offset_0x78 = id[0];
-		header.offset_0x7C = id[1];
-	}
-
-	if (gamecode) strncpy(header.gamecode, gamecode, 4);
-	if (makercode) strncpy((char *)header.makercode, makercode, 2);
-	// header
+	// fix up header CRCs and write header
 	header.logo_crc = CalcLogoCRC();
 	header.header_crc = CalcHeaderCRC();
 	fseek(fNDS, 0, SEEK_SET);

@@ -1,10 +1,31 @@
 #include "ndstool.h"
+#include "overlay.h"
+#include <errno.h>
+
+/*
+ * MkDir
+ */
+void MkDir(char *name)
+{
+#ifdef __MINGW32__
+	if (mkdir(name))
+#else
+	if (mkdir(name, S_IRWXU))
+#endif
+	{
+		if (errno != EEXIST)
+		{
+			fprintf(stderr, "Cannot create directory '%s'.\n", name);
+			exit(1);
+		}
+	}
+}
 
 /*
  * ExtractFile
- * if filename==0 nothing will be written
+ * if rootdir==0 nothing will be written
  */
-void ExtractFile(char *filename, unsigned int file_id)
+void ExtractFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id)
 {
 	unsigned int save_filepos = ftell(fNDS);
 	
@@ -15,16 +36,23 @@ void ExtractFile(char *filename, unsigned int file_id)
 	unsigned_int bottom;
 	fread(&bottom, 1, sizeof(bottom), fNDS);
 	unsigned int size = bottom - top;
+	if (size > (1U << (17 + header.devicecap))) { fprintf(stderr, "File %u: Size is too big. FAT offset 0x%X contains invalid data.\n", file_id, header.fat_offset + 8*file_id); exit(1); }
 
-	// print file size
-	if (!filerootdir || verbose)
+	// print file info
+	if (!rootdir || verbose)
 	{
-		printf("%8u\n", size);
+		printf("%5u 0x%08X 0x%08X %9u %s%s\n", file_id, (int)top, (int)bottom, size, prefix, entry_name);
 	}
 
 	// extract file
-	if (filename)
+	if (rootdir)
 	{
+		// make filename
+		char filename[MAXPATHLEN];
+		strcpy(filename, rootdir);
+		strcat(filename, prefix);
+		strcat(filename, entry_name);
+
 		fseek(fNDS, top, SEEK_SET);
 		FILE *fo = fopen(filename, "wb");
 		if (!fo) { fprintf(stderr, "Cannot create file '%s'.\n", filename); exit(1); }
@@ -89,16 +117,7 @@ void ExtractDirectory(char *prefix, unsigned int dir_id)
 				strcpy(strbuf, filerootdir);
 				strcat(strbuf, prefix);
 				strcat(strbuf, entry_name);
-
-#ifdef __MINGW32__
-				if (mkdir(strbuf))
-#else
-				if (mkdir(strbuf, S_IRWXU))
-#endif
-				{
-					fprintf(stderr, "Cannot create directory '%s'.\n", strbuf);
-					exit(1);
-				}
+				MkDir(strbuf);
 			}
 
 			strcpy(strbuf, prefix);
@@ -108,25 +127,7 @@ void ExtractDirectory(char *prefix, unsigned int dir_id)
 		}
 		else
 		{
-			if (!filerootdir || verbose)
-			{
-				//printf("%04X ", file_id);
-				printf("%s%s", prefix, entry_name);
-				int len = strlen(prefix) + strlen(entry_name);
-				for (; len<70; len++) putchar(' ');
-			}
-
-			if (filerootdir)
-			{
-				strcpy(strbuf, filerootdir);
-				strcat(strbuf, prefix);
-				strcat(strbuf, entry_name);
-				ExtractFile(strbuf, file_id);
-			}
-			else
-			{
-				ExtractFile(0, file_id);
-			}
+			ExtractFile(filerootdir, prefix, entry_name, file_id);
 		}
 	}
 
@@ -144,18 +145,49 @@ void ExtractFiles()
 
 	if (filerootdir)
 	{
-#ifdef __MINGW32__
-		if (mkdir(filerootdir))
-#else
-		if (mkdir(filerootdir, S_IRWXU))
-#endif
-		{
-			fprintf(stderr, "Cannot create directory '%s'.\n", filerootdir);
-			exit(1);
-		}
+		MkDir(filerootdir);
 	}
 
-	ExtractDirectory("/", 0xF000);
+	ExtractDirectory("/", 0xF000);		// list or extract
+
+	fclose(fNDS);
+}
+
+/*
+ * ExtractOverlayFiles2
+ */
+ void ExtractOverlayFiles2(unsigned int overlay_offset, unsigned int overlay_size)
+ {
+ 	OverlayEntry overlayEntry;
+
+	if (overlay_size)
+	{
+		fseek(fNDS, overlay_offset, SEEK_SET);
+		for (unsigned int i=0; i<overlay_size; i+=sizeof(OverlayEntry))
+		{
+			fread(&overlayEntry, 1, sizeof(overlayEntry), fNDS);
+			char s[32]; sprintf(s, OVERLAY_FMT, overlayEntry.file_id);
+			ExtractFile(overlaydir, "/", s, overlayEntry.file_id);
+		}
+	}
+}
+
+/*
+ * ExtractOverlayFiles
+ */
+void ExtractOverlayFiles()
+{
+	fNDS = fopen(ndsfilename, "rb");
+	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
+	fread(&header, 512, 1, fNDS);
+
+	if (overlaydir)
+	{
+		MkDir(overlaydir);
+	}
+
+	ExtractOverlayFiles2(header.arm9_overlay_offset, header.arm9_overlay_size);
+	ExtractOverlayFiles2(header.arm7_overlay_offset, header.arm7_overlay_size);
 
 	fclose(fNDS);
 }
@@ -163,7 +195,7 @@ void ExtractFiles()
 /*
  * Extract
  */
-void Extract(char *outfilename, bool indirect_offset, unsigned int offset, bool indirect_size, unsigned size)
+void Extract(char *outfilename, bool indirect_offset, unsigned int offset, bool indirect_size, unsigned size, bool with_footer)
 {
 	fNDS = fopen(ndsfilename, "rb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
@@ -184,6 +216,20 @@ void Extract(char *outfilename, bool indirect_offset, unsigned int offset, bool 
 		fread(copybuf, 1, size2, fNDS);
 		fwrite(copybuf, 1, size2, fo);
 		size -= size2;
+	}
+
+	if (with_footer)
+	{
+		unsigned_int nitrocode;
+		fread(&nitrocode, sizeof(nitrocode), 1, fNDS);
+		if (nitrocode == 0xDEC00621)
+		{
+			for (int i=0; i<3; i++)		// write additional 3 words
+			{
+				fwrite(&nitrocode, sizeof(nitrocode), 1, fo);
+				fread(&nitrocode, sizeof(nitrocode), 1, fNDS);	// next field
+			}
+		}
 	}
 
 	fclose(fo);

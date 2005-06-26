@@ -16,6 +16,9 @@ char *ndsfilename = 0;
 char *arm7filename = 0;
 char *arm9filename = 0;
 char *filerootdir = 0;
+char *overlaydir = 0;
+char *arm7ovltablefilename = 0;
+char *arm9ovltablefilename = 0;
 char *bannerfilename = 0;
 char *bannertext = 0;
 char *headerfilename = 0;
@@ -40,28 +43,35 @@ void Help(char *unknownoption = 0)
 		printf("Unknown option: %s\n\n", unknownoption);
 	}
 
-	printf("Show header:         -i game.nds\n");
-	printf("Fix header CRC       -f game.nds\n");
-	printf("List files:          -l game.nds\n");
-	printf("Create               -c game.nds\n");
-	printf("Extract              -x game.nds\n");
+	printf("\n");
+	printf("Parameter             Syntax                         Comments\n");
+	printf("---------             ------                         --------\n");
+	printf("Show header:          -i file.nds\n");
+	printf("Fix header CRC        -f file.nds\n");
+	printf("List files:           -l file.nds\n");
+	printf("Create                -c file.nds\n");
+	printf("Extract               -x file.nds\n");
 	printf("Create/Extract options:\n");
-	printf("  ARM7 executable    -7 arm7.bin\n");
-	printf("  ARM9 executable    -9 arm9.bin\n");
-	printf("  ARM7 RAM address   -r7 address                    (optional, 0x for hex)\n");
-	printf("  ARM9 RAM address   -r9 address                    (optional, 0x for hex)\n");
-	printf("  ARM7 RAM entry     -e7 address                    (optional, 0x for hex)\n");
-	printf("  ARM9 RAM entry     -e9 address                    (optional, 0x for hex)\n");
-	printf("  files              -d directory                   (optional)\n");
-	printf("  header template    -h header.bin                  (optional)\n");
-	printf("  banner bitmap/text -b icon.bmp \"title;lines;here\" (optional)\n");
-	printf("  banner binary      -t banner.bnr                  (optional)\n");
-	printf("  logo bitmap        -o logo.bmp                    (optional)\n");
-	printf("  logo binary        -o logo.bin                    (optional)\n");
-	printf("  maker code         -m code                        (optional)\n");
-	printf("  game code          -g code                        (optional)\n");
-	printf("  unique ID filename -u game.uid                    (optional, auto generated)\n");
-	printf("  verbose            -v\n");
+	printf("  verbose             -v                             optional\n");
+	printf("\n");
+	printf("  ARM9 executable     -9 file.bin\n");
+	printf("  ARM7 executable     -7 file.bin                    optional\n");
+	printf("  ARM9 overlay table  -y9 file.bin                   optional\n");
+	printf("  ARM7 overlay table  -y7 file.bin                   optional\n");
+	printf("  data files          -d directory                   optional\n");
+	printf("  overlay files       -y directory                   optional\n");
+	printf("  banner bitmap/text  -b file.bmp \"text;text;text\"   optional, 3 lines max.\n");
+	printf("  banner binary       -t file.bin                    optional\n");
+	printf("\n");
+	printf("  header template     -h file.bin                    optional\n");
+	printf("  logo bitmap/binary  -o file.bmp/file.bin           optional\n");
+	printf("  maker code          -m code                        optional\n");
+	printf("  game code           -g code                        optional\n");
+	//printf("  unique ID filename  -u file.bin                    optional, for homebrew, auto generated\n");
+	printf("  ARM9 RAM address    -r9 address                    optional, 0x prefix for hex\n");
+	printf("  ARM7 RAM address    -r7 address                    optional, 0x prefix for hex\n");
+	printf("  ARM9 RAM entry      -e9 address                    optional, 0x prefix for hex\n");
+	printf("  ARM7 RAM entry      -e7 address                    optional, 0x prefix for hex\n");
 }
 
 /*
@@ -178,8 +188,9 @@ int main(int argc, char *argv[])
 
 				case 'm':	// maker code
 					makercode = (argc > a) ? argv[++a] : 0;
-					if (strlen(makercode) != 2) {
-						printf("maker code must be 2 characters!\n");
+					if (strlen(makercode) != 2)
+					{
+						fprintf(stderr, "Maker code must be 2 characters!\n");
 						exit(1);
 					}
 					break;
@@ -187,12 +198,30 @@ int main(int argc, char *argv[])
 				case 'g':	// game code
 					gamecode = (argc > a) ? argv[++a] : 0;
 					if (strlen(gamecode) != 4) {
-						printf("game code must be 4 characters!\n");
+						fprintf(stderr, "Game code must be 4 characters!\n");
 						exit(1);
 					}
+					for (int i=0; i<4; i++) if ((gamecode[a] >= 'a') && (gamecode[a] <= 'z'))
+					{
+						fprintf(stderr, "Warning: Gamecode contains lowercase characters.\n");
+						break;
+					}
+					if (gamecode[a] == 'A')
+					{
+						fprintf(stderr, "Warning: Gamecode starts with 'A', which might be used for another commercial product.\n");
+						break;
+					}
 					break;
-					
 
+				case 'y':	// overlay table file / directory
+					switch (argv[a][2])
+					{
+						case '7': arm7ovltablefilename = (argc > a) ? argv[++a] : 0; break;
+						case '9': arm9ovltablefilename = (argc > a) ? argv[++a] : 0; break;
+						case 0: overlaydir = (argc > a) ? argv[++a] : 0; break;
+						default: Help(argv[a]); return 1;
+					}
+					break;
 
 				default:
 				{
@@ -210,16 +239,19 @@ int main(int argc, char *argv[])
 
 	if (extract && create)
 	{
-		printf("Cannot both extract and create!\n");
+		fprintf(stderr, "Cannot both extract and create!\n");
 		return 1;
 	}
 	else if (extract)
 	{
+		if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C, true);
 		if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
-		if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C);
-		if (filerootdir) ExtractFiles();
 		if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
 		if (headerfilename) Extract(headerfilename, false, 0x0, false, 0x200);
+		if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
+		if (arm7ovltablefilename) Extract(arm7ovltablefilename, true, 0x58, true, 0x5C);
+		if (overlaydir) ExtractOverlayFiles();
+		if (filerootdir) ExtractFiles();
 	}
 	else if (create)
 	{

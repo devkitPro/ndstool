@@ -2,10 +2,11 @@ Nintendo DS rom tool
 by Rafael Vuijk (aka DarkFader)
 
 CVS admins / additional code:
-	DarkFader <darkfader@gmail.com>
+	DarkFader <darkfader@xs4all.nl>
 	natrium42 <natrium@gmail.com>
 	WinterMute <wntrmute@gmail.com>
 
+v1.20 - fixed filesystem stuff, added overlay support
 v1.19 - some banner information
 v1.18 - default logo is now a PassMe NDS loader
 v1.17 - BMP converter for logo

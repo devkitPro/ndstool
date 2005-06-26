@@ -3,22 +3,22 @@
 /*
  * Variables
  */
-unsigned int free_file_id = 0x0000;
-unsigned int _entry_start;	// current position in name entry table
-unsigned int file_top;	// current position to write new file to
-unsigned int free_dir_id = 0xF001;
-unsigned int directory_count = 0;
-unsigned int file_count = 0;
-unsigned int total_name_size = 0;
+unsigned int _entry_start;			// current position in name entry table
+unsigned int file_top;				// current position to write new file to
+unsigned int free_dir_id = 0xF000;	// incremented in ReadDirectory
+unsigned int directory_count = 0;	// incremented in ReadDirectory
+unsigned int file_count = 0;		// incremented in ReadDirectory
+unsigned int total_name_size = 0;	// incremented in ReadDirectory
+unsigned int file_end = 0;			// end of all file data. updated in AddFile
+unsigned int free_file_id = 0;		// incremented in AddDirectory
 
 /*
  * ReadDirectory
  * Read directory tree into memory structure
+ * returns last directory entry
  */
-void ReadDirectory(Tree *tree, char *path)
+Tree *ReadDirectory(Tree *tree, char *path)
 {
-	directory_count++;
-
 	//printf("%s\n", path);
 
 	DIR *dir = opendir(path);
@@ -39,38 +39,99 @@ void ReadDirectory(Tree *tree, char *path)
 		struct stat st;
 		if (stat(strbuf, &st)) { fprintf(stderr, "Cannot get stat of '%s'.\n", strbuf); exit(1); }
 
+		//if (S_ISDIR(st.st_mode) && !subdirs) continue;		// skip subdirectories
+
 		tree->next = new Tree();
 		tree = tree->next;
 		tree->name = strdup(de->d_name);
-
 		total_name_size += strlen(de->d_name);
 
 		if (S_ISDIR(st.st_mode))
 		{
-			//strcat(strbuf, "/");
 			tree->dir_id = free_dir_id++;
 			tree->directory = new Tree();
+			directory_count++;
 			ReadDirectory(tree->directory, strbuf);
 		}
 		else if (S_ISREG(st.st_mode))
 		{
-			//tree->id = free_file_id++;
-			//printf("%s\n", path);
-			//file_id++;
 			file_count++;
+		}
+		else
+		{
+			fprintf(stderr, "'%s' is not a file or directory!\n", strbuf);
+			exit(1);
 		}
 	}
 	closedir(dir);
+	
+	return tree;
 }
 
 /*
- * WalkTree
+ * AddFile
+ */
+void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id, unsigned int alignmask)
+{
+	// make filename
+	char strbuf[MAXPATHLEN];
+	strcpy(strbuf, rootdir);
+	strcat(strbuf, prefix);
+	strcat(strbuf, entry_name);
+
+	//unsigned int file_end = ftell(fNDS);
+
+	file_top = (file_top + alignmask) &~ alignmask;		// align to alignmask+1 bytes
+	fseek(fNDS, file_top, SEEK_SET);
+
+
+	FILE *fi = fopen(strbuf, "rb");
+	if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", strbuf); exit(1); }
+	fseek(fi, 0, SEEK_END);
+	unsigned int size = ftell(fi);
+	unsigned int file_bottom = file_top + size;
+	fseek(fi, 0, SEEK_SET);
+
+	// print
+	if (verbose)
+	{
+		printf("%5u 0x%08X 0x%08X %9u %s%s\n", file_id, file_top, file_bottom, size, prefix, entry_name);
+	}
+
+	// write data
+	unsigned int sizeof_copybuf = 256*1024;
+	unsigned char *copybuf = new unsigned char [sizeof_copybuf];
+	while (size > 0)
+	{
+		unsigned int size2 = (size >= sizeof_copybuf) ? sizeof_copybuf : size;
+		fread(copybuf, 1, size2, fi);
+		fwrite(copybuf, 1, size2, fNDS);
+		size -= size2;
+	}
+	delete [] copybuf;
+	fclose(fi);
+	if ((unsigned int)ftell(fNDS) > file_end) file_end = ftell(fNDS);
+
+	// write fat
+	fseek(fNDS, header.fat_offset + 8*file_id, SEEK_SET);
+	unsigned_int top = file_top;
+	fwrite(&top, 1, sizeof(top), fNDS);
+	unsigned_int bottom = file_bottom;
+	fwrite(&bottom, 1, sizeof(bottom), fNDS);
+	
+	file_top = file_bottom;
+}
+
+/*
+ * AddDirectory
  * Walks the tree and adds files to NDS
  */
-unsigned int WalkTree(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id)
+void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id, unsigned int alignmask)
 {
 	// skip dummy node
 	tree = tree->next;
+
+	if (verbose) printf("%s\n", prefix);
 
 	// write directory info
 	fseek(fNDS, header.fnt_offset + 8*(this_dir_id & 0xFFF), SEEK_SET);
@@ -82,97 +143,74 @@ unsigned int WalkTree(Tree *tree, char *prefix, unsigned int this_dir_id, unsign
 	unsigned_short parent_id = _parent_id;	// ID of parent directory or directory count (root)
 	fwrite(&parent_id, 1, sizeof(parent_id), fNDS);
 
-	//printf("%04X %04X+ ", this_dir_id, (int)top_file_id);
-	if (verbose) printf("%s\n", prefix);
+	//printf("dir %X file_id %u +\n", this_dir_id, (int)top_file_id);
 
-	char strbuf[MAXPATHLEN];
+	// directory entrynames
+	{
+		// start of directory entrynames
+		fseek(fNDS, header.fnt_offset + _entry_start, SEEK_SET);
+	
+		// write filenames
+		for (Tree *t=tree; t; t=t->next)
+		{
+			if (!t->directory)
+			{
+				int namelen = strlen(t->name);
+				fputc(t->directory ? namelen | 128 : namelen, fNDS); _entry_start += 1;
+				fwrite(t->name, 1, namelen, fNDS); _entry_start += namelen;
+	
+				//printf("[ %s -> %u ]\n", t->name, free_file_id);
+	
+				free_file_id++;
+			}
+		}
+	
+		// write directorynames
+		for (Tree *t=tree; t; t=t->next)
+		{
+			if (t->directory)
+			{
+				//printf("*entry %s\n", t->name);
+	
+				int namelen = strlen(t->name);
+				fputc(t->directory ? namelen | 128 : namelen, fNDS); _entry_start += 1;
+				fwrite(t->name, 1, namelen, fNDS); _entry_start += namelen;
+	
+				//printf("[ %s -> %X ]\n", t->name, t->dir_id);
+	
+				unsigned_short _dir_id_tmp = t->dir_id;
+				fwrite(&_dir_id_tmp, 1, sizeof(_dir_id_tmp), fNDS);
+				_entry_start += sizeof(_dir_id_tmp);
+			}
+		}
+		
+		fputc(0, fNDS); _entry_start += 1;	// end of directory entrynames
+	}
 
-	// write names and allocate IDs
-	fseek(fNDS, header.fnt_offset + _entry_start, SEEK_SET);
+	// add files
+	unsigned int file_id = _top_file_id;
 	for (Tree *t=tree; t; t=t->next)
 	{
-		int namelen = strlen(t->name);
-		fputc(t->directory ? namelen | 128 : namelen, fNDS); _entry_start += 1;
-		fwrite(t->name, 1, namelen, fNDS); _entry_start += namelen;
-		if (t->directory)
-		{
-			//printf("[ %s -> %04X ]\n", t->name, t->dir_id);
+		//printf("*2* %s\n", t->name);
 
-			unsigned_short _dir_id_tmp = t->dir_id;
-			fwrite(&_dir_id_tmp, 1, sizeof(_dir_id_tmp), fNDS);
-			_entry_start += sizeof(_dir_id_tmp);
-		}
-		else
+		if (!t->directory)
 		{
-			//printf("[ %s -> %04X ]\n", t->name, free_file_id);
-
-			free_file_id++;
+			AddFile(filerootdir, prefix, t->name, file_id++, alignmask);
 		}
 	}
-	fputc(0, fNDS); _entry_start += 1;	// end of directory
 
-	unsigned int file_end = ftell(fNDS);
-
-	// recurse
+	// add subdirectories
 	for (Tree *t=tree; t; t=t->next)
 	{
+		//printf("*2* %s\n", t->name);
+
 		if (t->directory)
 		{
+			char strbuf[MAXPATHLEN];
 			strcpy(strbuf, prefix);
 			strcat(strbuf, t->name);
 			strcat(strbuf, "/");
-			unsigned int file_end2 = WalkTree(t->directory, strbuf, t->dir_id, this_dir_id);
-			if (file_end2 > file_end) file_end = file_end2;
-		}
-		else
-		{
-			file_top = (file_top + 0x1FF) &~ 0x1F;		// align to 512 bytes
-			fseek(fNDS, file_top, SEEK_SET);
-
-			if (verbose)
-			{
-				strcpy(strbuf, prefix);
-				strcat(strbuf, t->name);
-				printf("%s\n", strbuf);
-			}
-
-			// open file
-			strcpy(strbuf, filerootdir);
-			strcat(strbuf, prefix);
-			strcat(strbuf, t->name);
-
-			FILE *fi = fopen(strbuf, "rb");
-			if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", strbuf); exit(1); }
-			fseek(fi, 0, SEEK_END);
-			unsigned int size = ftell(fi);
-			unsigned int file_bottom = file_top + size;
-			fseek(fi, 0, SEEK_SET);
-
-			// write data
-			unsigned int sizeof_copybuf = 256*1024;
-			unsigned char *copybuf = new unsigned char [sizeof_copybuf];
-			while (size > 0)
-			{
-				unsigned int size2 = (size >= sizeof_copybuf) ? sizeof_copybuf : size;
-				fread(copybuf, 1, size2, fi);
-				fwrite(copybuf, 1, size2, fNDS);
-				size -= size2;
-			}
-			delete [] copybuf;
-			fclose(fi);
-			if ((unsigned int)ftell(fNDS) > file_end) file_end = ftell(fNDS);
-
-			// write fat
-			fseek(fNDS, header.fat_offset + 8*_top_file_id, SEEK_SET);
-			unsigned_int top = file_top;
-			fwrite(&top, 1, sizeof(top), fNDS);
-			unsigned_int bottom = file_bottom;
-			fwrite(&bottom, 1, sizeof(bottom), fNDS);
-			
-			_top_file_id++;
-			file_top = file_bottom;
+			AddDirectory(t->directory, strbuf, t->dir_id, this_dir_id, alignmask);
 		}
 	}
-
-	return file_end;
 }
