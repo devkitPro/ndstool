@@ -70,7 +70,7 @@ export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 					$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
-					$(CURDIR)/DefaultArm7
+					$(CURDIR)/DefaultArm7 $(CURDIR)/Loader
 
 export CC		:=	$(PREFIX)gcc
 export CXX		:=	$(PREFIX)g++
@@ -83,7 +83,7 @@ export OBJCOPY	:=	$(PREFIX)objcopy
 CFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES		:=	default_arm7.bin
+BINFILES		:=	default_arm7.bin loadme.bin
 BMPFILES		:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bmp)))
 
 export OFILES	:= $(BINFILES:.bin=.o) $(BMPFILES:.bmp=.o)  $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
@@ -113,12 +113,14 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@make -C DefaultArm7
+	@make -C Loader
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
 	@make -C DefaultArm7 clean
+	@make -C Loader clean
 	@rm -fr $(BUILD) *.exe
 
 #---------------------------------------------------------------------------------
