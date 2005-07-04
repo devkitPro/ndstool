@@ -27,10 +27,11 @@ struct Header
 	unsigned_int arm9_overlay_size;
 	unsigned_int arm7_overlay_offset;
 	unsigned_int arm7_overlay_size;
-	unsigned char rom_control_info1[8];
+	unsigned_int rom_control_info1;
+	unsigned_int rom_control_info2;
 	unsigned_int banner_offset;
 	unsigned_short secure_area_crc;
-	unsigned_short rom_control_info2;
+	unsigned_short rom_control_info3;
 	unsigned_int offset_0x70;						// ?
 	unsigned_int offset_0x74;						// ?
 	unsigned_int offset_0x78;						// unique ID for homebrew

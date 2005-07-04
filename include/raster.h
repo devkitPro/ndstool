@@ -14,7 +14,7 @@ typedef struct tagBITMAPINFOHEADER
 	signed_int biWidth;
 	signed_int biHeight;
 	unsigned_short biPlanes;
-	unsigned_short biBitCount ;
+	unsigned_short biBitCount;
 	unsigned_int biCompression;
 	unsigned_int biSizeImage;
 	signed_int biXPelsPerMeter;
