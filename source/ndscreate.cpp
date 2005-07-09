@@ -377,8 +377,8 @@ void Create()
 	header.application_end_offset = ftell(fNDS);
 
 	// fix up header CRCs and write header
-	header.logo_crc = CalcLogoCRC();
-	header.header_crc = CalcHeaderCRC();
+	header.logo_crc = CalcLogoCRC(header);
+	header.header_crc = CalcHeaderCRC(header);
 	fseek(fNDS, 0, SEEK_SET);
 	fwrite(&header, 0x200, 1, fNDS);
 	

@@ -84,8 +84,8 @@ extern Maker makers[];
 extern int NumMakers;
 
 unsigned short CalcCRC(unsigned char *data, unsigned int length);
-unsigned short CalcHeaderCRC();
-unsigned short CalcLogoCRC();
+unsigned short CalcHeaderCRC(Header &header);
+unsigned short CalcLogoCRC(Header &header);
 unsigned short CalcSecureAreaCRC();
 void FixHeaderCRC(char *ndsfilename);
 void ShowHeader(char *ndsfilename);
