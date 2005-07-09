@@ -44,34 +44,35 @@ void Help(char *unknownoption = 0)
 	}
 
 	printf("\n");
-	printf("Parameter             Syntax                         Comments\n");
-	printf("---------             ------                         --------\n");
-	printf("Show header:          -i file.nds\n");
-	printf("Fix header CRC        -f file.nds\n");
-	printf("List files:           -l file.nds\n");
-	printf("Create                -c file.nds\n");
-	printf("Extract               -x file.nds\n");
+	printf("Parameter              Syntax                         Comments\n");
+	printf("---------              ------                         --------\n");
+	printf("Show information:      -i file.nds\n");
+	printf("Show more information: -v -i file.nds\n");
+	printf("Fix header CRC         -f file.nds\n");
+	printf("List files:            -l file.nds\n");
+	printf("Create                 -c file.nds\n");
+	printf("Extract                -x file.nds\n");
 	printf("Create/Extract options:\n");
-	printf("  verbose             -v                             optional\n");
+	printf("  verbose              -v                             optional\n");
 	printf("\n");
-	printf("  ARM9 executable     -9 file.bin\n");
-	printf("  ARM7 executable     -7 file.bin                    optional\n");
-	printf("  ARM9 overlay table  -y9 file.bin                   optional\n");
-	printf("  ARM7 overlay table  -y7 file.bin                   optional\n");
-	printf("  data files          -d directory                   optional\n");
-	printf("  overlay files       -y directory                   optional\n");
-	printf("  banner bitmap/text  -b file.bmp \"text;text;text\"   optional, 3 lines max.\n");
-	printf("  banner binary       -t file.bin                    optional\n");
+	printf("  ARM9 executable      -9 file.bin\n");
+	printf("  ARM7 executable      -7 file.bin                    optional\n");
+	printf("  ARM9 overlay table   -y9 file.bin                   optional\n");
+	printf("  ARM7 overlay table   -y7 file.bin                   optional\n");
+	printf("  data files           -d directory                   optional\n");
+	printf("  overlay files        -y directory                   optional\n");
+	printf("  banner bitmap/text   -b file.bmp \"text;text;text\"   optional, 3 lines max.\n");
+	printf("  banner binary        -t file.bin                    optional\n");
 	printf("\n");
-	printf("  header template     -h file.bin                    optional\n");
-	printf("  logo bitmap/binary  -o file.bmp/file.bin           optional\n");
-	printf("  maker code          -m code                        optional\n");
-	printf("  game code           -g code                        optional\n");
+	printf("  header template      -h file.bin                    optional\n");
+	printf("  logo bitmap/binary   -o file.bmp/file.bin           optional\n");
+	printf("  maker code           -m code                        optional\n");
+	printf("  game code            -g code                        optional\n");
 	//printf("  unique ID filename  -u file.bin                    optional, for homebrew, auto generated\n");
-	printf("  ARM9 RAM address    -r9 address                    optional, 0x prefix for hex\n");
-	printf("  ARM7 RAM address    -r7 address                    optional, 0x prefix for hex\n");
-	printf("  ARM9 RAM entry      -e9 address                    optional, 0x prefix for hex\n");
-	printf("  ARM7 RAM entry      -e7 address                    optional, 0x prefix for hex\n");
+	printf("  ARM9 RAM address     -r9 address                    optional, 0x prefix for hex\n");
+	printf("  ARM7 RAM address     -r7 address                    optional, 0x prefix for hex\n");
+	printf("  ARM9 RAM entry       -e9 address                    optional, 0x prefix for hex\n");
+	printf("  ARM7 RAM entry       -e7 address                    optional, 0x prefix for hex\n");
 }
 
 /*
