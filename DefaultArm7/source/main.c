@@ -121,6 +121,14 @@ void InterruptHandler(void) {
 				}
 			}
 		}
+		
+		
+		// 
+		if (IPC->jump)
+		{
+			IME = 0;
+			((void (*)())(IPC->jump))();
+		}
 	}
  
 	// Acknowledge interrupts
@@ -151,6 +159,9 @@ int main(int argc, char ** argv) {
 	IF = ~0;
 	DISP_SR = DISP_VBLANK_IRQ;
 	IME = 1;
+	
+	//
+	IPC->jump = 0;
 
 	// Keep the ARM7 out of main RAM
 	while (1) swiWaitForVBlank();

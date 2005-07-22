@@ -6,6 +6,6 @@ struct BigInt
 	void MulMod(BigInt &a, BigInt &b, BigInt &m);
 	void PowMod(BigInt &n, BigInt &m);
 	void print();
-	void Set(unsigned char *data, int length);
-	void Get(unsigned char *data, int length);
+	void Set(unsigned char *data, unsigned int length);
+	void Get(unsigned char *data, unsigned int length);
 };

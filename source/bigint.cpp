@@ -27,10 +27,10 @@ int BigInt::Sub(BigInt &a, BigInt &b, int b_shift)
 void BigInt::MulMod(BigInt &a, BigInt &b, BigInt &m)
 {
 	memset(this, 0, sizeof(*this));
-	for (int ia=0; ia<sizeof(a.data)/2; ia++)
+	for (unsigned int ia=0; ia<sizeof(a.data)/2; ia++)
 	{
 		int carry = 0;
-		for (int ib=0; ib<sizeof(b.data)/2; ib++)
+		for (unsigned int ib=0; ib<sizeof(b.data)/2; ib++)
 		{
 			unsigned int r = a.data[ia] * b.data[ib] + carry + data[ia+ib];
 			data[ia+ib] = r;
@@ -73,18 +73,18 @@ void BigInt::print()
 	printf(" ]\n");
 }
 
-void BigInt::Set(unsigned char *data, int length)
+void BigInt::Set(unsigned char *data, unsigned int length)
 {
 	memset(this, 0, sizeof(*this));
-	for (int i=0; i<length; i++)
+	for (unsigned int i=0; i<length; i++)
 	{
 		this->data[length - 1 - i] = data[i];
 	}
 }
 
-void BigInt::Get(unsigned char *data, int length)
+void BigInt::Get(unsigned char *data, unsigned int length)
 {
-	for (int i=0; i<length; i++)
+	for (unsigned int i=0; i<length; i++)
 	{
 		data[i] = this->data[length - 1 - i];
 	}
