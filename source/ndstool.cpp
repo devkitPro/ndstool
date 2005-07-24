@@ -49,6 +49,9 @@ void Help(char *unknownoption = 0)
 	printf("Show information:      -i file.nds\n");
 	printf("Show more information: -v -i file.nds\n");
 	printf("Fix header CRC         -f file.nds\n");
+	if (EncryptSecureArea)
+	printf("En/decrypt secure area -s file.nds\n");
+	//printf("Sign multiboot         -n file.nds");
 	printf("List files:            -l file.nds\n");
 	printf("Create                 -c file.nds\n");
 	printf("Extract                -x file.nds\n");
@@ -101,7 +104,7 @@ int main(int argc, char *argv[])
 				case 'i':	// show information
 				{
 					ndsfilename = (argc > a) ? argv[++a] : 0;
-					ShowHeader(ndsfilename);
+					ShowInfo(ndsfilename);
 					return 0;
 				}
 
@@ -110,6 +113,16 @@ int main(int argc, char *argv[])
 					ndsfilename = (argc > a) ? argv[++a] : 0;
 					FixHeaderCRC(ndsfilename);
 					return 0;
+				}
+				
+				case 's':	// en-/decrypt secure area
+				{
+					if (EncryptSecureArea)
+					{
+						ndsfilename = (argc > a) ? argv[++a] : 0;
+						EnDecryptSecureArea(ndsfilename);
+						return 0;
+					}
 				}
 
 				case 'l':	// list files

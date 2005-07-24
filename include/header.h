@@ -88,4 +88,8 @@ unsigned short CalcHeaderCRC(Header &header);
 unsigned short CalcLogoCRC(Header &header);
 unsigned short CalcSecureAreaCRC();
 void FixHeaderCRC(char *ndsfilename);
-void ShowHeader(char *ndsfilename);
+void ShowInfo(char *ndsfilename);
+
+extern void EnDecryptSecureArea(char *ndsfilename);
+extern void (*EncryptSecureArea)(unsigned char *data);
+extern void (*DecryptSecureArea)(unsigned char *data);

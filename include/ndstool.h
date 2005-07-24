@@ -11,6 +11,14 @@
 
 #define VER			"1.21"
 
+#define ROMTYPE_HOMEBREW	0
+#define ROMTYPE_MULTIBOOT	1
+#define ROMTYPE_NDSDUMPED	2	// decrypted secure area
+#define ROMTYPE_ENCRSECURE	3
+#define ROMTYPE_MASKROM		4	// unknown layout
+
+enum { BANNER_BINARY, BANNER_IMAGE };
+
 struct Tree
 {
 	unsigned int dir_id;	// directory ID in case of directory entry
@@ -26,8 +34,6 @@ struct Tree
 		next = 0;
 	}
 };
-
-enum { BANNER_BINARY, BANNER_IMAGE };
 
 extern unsigned int free_dir_id;
 extern unsigned int directory_count;
@@ -61,7 +67,7 @@ extern unsigned int arm7Entry;
 extern char *makercode;
 extern char *gamecode;
 
-// ndscreate
+// ndscreate.cpp
 Tree *ReadDirectory(Tree *tree, char *path);
 void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id, unsigned int alignmask);
 void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id, unsigned int alignmask);
