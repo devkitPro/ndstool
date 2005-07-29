@@ -124,12 +124,12 @@ void InterruptHandler(void) {
 		
 		
 		// 
-		if (IPC->jump)
+/*		if (IPC->jump)
 		{
 			IME = 0;
 			((void (*)())(IPC->jump))();
 		}
-	}
+*/	}
  
 	// Acknowledge interrupts
 	IF = IF;
@@ -138,6 +138,36 @@ void InterruptHandler(void) {
 //////////////////////////////////////////////////////////////////////
  
 
+
+/*#define SCREEN_WIDTH   256
+#define SCREEN_HEIGHT   192
+
+// those are pixel positions of the two points you click when calibrating
+#define TOUCH_CNTRL_X1   (*(vu8*)0x027FFCDC)
+#define TOUCH_CNTRL_Y1   (*(vu8*)0x027FFCDD)
+#define TOUCH_CNTRL_X2   (*(vu8*)0x027FFCE2)
+#define TOUCH_CNTRL_Y2   (*(vu8*)0x027FFCE3)
+
+// those are the corresponding touchscreen values:
+#define TOUCH_CAL_X1   (*(vu16*)0x027FFCD8)
+#define TOUCH_CAL_Y1   (*(vu16*)0x027FFCDA)
+#define TOUCH_CAL_X2   (*(vu16*)0x027FFCDE)
+#define TOUCH_CAL_Y2   (*(vu16*)0x027FFCE0)
+
+// linear mapping can be used to go from touchscreen position to pixel position
+
+// precalculate some values
+static int16 TOUCH_WIDTH  = TOUCH_CAL_X2 - TOUCH_CAL_X1;
+static int16 TOUCH_HEIGHT = TOUCH_CAL_Y2 - TOUCH_CAL_Y1;
+static int16 CNTRL_WIDTH  = TOUCH_CNTRL_X2 - TOUCH_CNTRL_X1;
+static int16 CNTRL_HEIGHT = TOUCH_CNTRL_Y2 - TOUCH_CNTRL_Y1;
+
+
+// reading pixel position:
+int16 x = (IPC->touchX - (int16) TOUCH_CAL_X1) * CNTRL_WIDTH  / TOUCH_WIDTH  + (int16) TOUCH_CNTRL_X1;
+int16 y = (IPC->touchY - (int16) TOUCH_CAL_Y1) * CNTRL_HEIGHT / TOUCH_HEIGHT + (int16) TOUCH_CNTRL_Y1; 
+
+*/
 int main(int argc, char ** argv) {
 
 	TOUCH_WIDTH  = PersonalData->calX2 - PersonalData->calX1; //TOUCH_CAL_X2 - TOUCH_CAL_X1;
@@ -161,11 +191,11 @@ int main(int argc, char ** argv) {
 	IME = 1;
 	
 	//
-	IPC->jump = 0;
+//	IPC->jump = 0;
 
 	// Keep the ARM7 out of main RAM
 	while (1) swiWaitForVBlank();
-	return 0;
+//	return 0;
 }
 
  
