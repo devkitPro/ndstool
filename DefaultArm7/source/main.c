@@ -21,7 +21,9 @@ s32 TOUCH_HEIGHT;
 s32 TOUCH_OFFSET_X;
 s32 TOUCH_OFFSET_Y; 
 
+//---------------------------------------------------------------------------------
 void startSound(int sampleRate, const void* data, uint32 bytes, u8 channel, u8 vol,  u8 pan, u8 format) {
+//---------------------------------------------------------------------------------
 	SCHANNEL_TIMER(channel)  = SOUND_FREQ(sampleRate);
 	SCHANNEL_SOURCE(channel) = (uint32)data;
 	SCHANNEL_LENGTH(channel) = bytes;
