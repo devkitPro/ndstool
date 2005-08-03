@@ -1,42 +1,33 @@
-//////////////////////////////////////////////////////////////////////
-// Simple ARM7 stub (sends RTC, TSC, and X/Y data to the ARM 9)
-// -- joat
-// -- modified by Darkain and others
-//////////////////////////////////////////////////////////////////////
+/*---------------------------------------------------------------------------------
+	$Id: main.c,v 1.8 2005-08-03 05:13:16 wntrmute Exp $
 
+	Simple ARM7 stub (sends RTC, TSC, and X/Y data to the ARM 9)
+
+	$Log: not supported by cvs2svn $
+
+---------------------------------------------------------------------------------*/
+#include <nds.h>
  
-#include "nds.h"
- 
-#include "nds/bios.h"
-#include "nds/arm7/touch.h"
-#include "nds/arm7/clock.h"
-
-//////////////////////////////////////////////////////////////////////
-
-#define SCREEN_WIDTH	256
-#define SCREEN_HEIGHT	192
-
-s32 TOUCH_WIDTH; 
-s32 TOUCH_HEIGHT; 
-s32 TOUCH_OFFSET_X;
-s32 TOUCH_OFFSET_Y; 
+#include <nds/bios.h>
+#include <nds/arm7/touch.h>
+#include <nds/arm7/clock.h>
 
 //---------------------------------------------------------------------------------
-void startSound(int sampleRate, const void* data, uint32 bytes, u8 channel, u8 vol,  u8 pan, u8 format) {
+void startSound(int sampleRate, const void* data, u32 bytes, u8 channel, u8 vol,  u8 pan, u8 format) {
 //---------------------------------------------------------------------------------
 	SCHANNEL_TIMER(channel)  = SOUND_FREQ(sampleRate);
-	SCHANNEL_SOURCE(channel) = (uint32)data;
-	SCHANNEL_LENGTH(channel) = bytes;
-	SCHANNEL_CR(channel)     = SOUND_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(vol) | SOUND_PAN(pan) | (format==1?SOUND_8BIT:SOUND_16BIT);
+	SCHANNEL_SOURCE(channel) = (u32)data;
+	SCHANNEL_LENGTH(channel) = bytes >> 2 ;
+	SCHANNEL_CR(channel)     = SCHANNEL_ENABLE | SOUND_ONE_SHOT | SOUND_VOL(vol) | SOUND_PAN(pan) | (format==1?SOUND_8BIT:SOUND_16BIT);
 }
 
 
 //---------------------------------------------------------------------------------
-s8 getFreeSoundChannel() {
+s32 getFreeSoundChannel() {
 //---------------------------------------------------------------------------------
 	int i;
 	for (i=0; i<16; i++) {
-		if ( (SCHANNEL_CR(i) & SOUND_ENABLE) == 0 ) return i;
+		if ( (SCHANNEL_CR(i) & SCHANNEL_ENABLE) == 0 ) return i;
 	}
 	return -1;
 }
@@ -60,10 +51,14 @@ void InterruptHandler(void) {
 		but = XKEYS;
 		if (!(but & 0x40)) {
 			// Read the touch screen
-			x = touchRead(TSC_MEASURE_X);
-			y = touchRead(TSC_MEASURE_Y);
-			xpx = ( ((SCREEN_WIDTH -60) * x) / TOUCH_WIDTH  ) - TOUCH_OFFSET_X;
-			ypx = ( ((SCREEN_HEIGHT-60) * y) / TOUCH_HEIGHT ) - TOUCH_OFFSET_Y;
+
+			touchPosition tempPos = touchReadXY();
+			
+			x = tempPos.x;
+			y = tempPos.y;
+			xpx = tempPos.px;
+			ypx = tempPos.py;
+			
 			z1 = touchRead(TSC_MEASURE_Z1);
 			z2 = touchRead(TSC_MEASURE_Z2);
 		}
@@ -114,9 +109,11 @@ void InterruptHandler(void) {
 		TransferSound *snd = IPC->soundData;
 		IPC->soundData = 0;
 
-		if (snd) {
+		if (0 != snd) {
+
+
 			for (i=0; i<snd->count; i++) {
-				s8 chan = getFreeSoundChannel();
+				s32 chan = getFreeSoundChannel();
 
 				if (chan >= 0) {
 					startSound(snd->data[i].rate, snd->data[i].data, snd->data[i].len, chan, snd->data[i].vol, snd->data[i].pan, snd->data[i].format);
@@ -125,62 +122,21 @@ void InterruptHandler(void) {
 		}
 		
 		
-		// 
-/*		if (IPC->jump)
-		{
-			IME = 0;
-			((void (*)())(IPC->jump))();
-		}
-*/	}
+	}
  
 	// Acknowledge interrupts
 	IF = IF;
 } 
 
-//////////////////////////////////////////////////////////////////////
- 
-
-
-/*#define SCREEN_WIDTH   256
-#define SCREEN_HEIGHT   192
-
-// those are pixel positions of the two points you click when calibrating
-#define TOUCH_CNTRL_X1   (*(vu8*)0x027FFCDC)
-#define TOUCH_CNTRL_Y1   (*(vu8*)0x027FFCDD)
-#define TOUCH_CNTRL_X2   (*(vu8*)0x027FFCE2)
-#define TOUCH_CNTRL_Y2   (*(vu8*)0x027FFCE3)
-
-// those are the corresponding touchscreen values:
-#define TOUCH_CAL_X1   (*(vu16*)0x027FFCD8)
-#define TOUCH_CAL_Y1   (*(vu16*)0x027FFCDA)
-#define TOUCH_CAL_X2   (*(vu16*)0x027FFCDE)
-#define TOUCH_CAL_Y2   (*(vu16*)0x027FFCE0)
-
-// linear mapping can be used to go from touchscreen position to pixel position
-
-// precalculate some values
-static int16 TOUCH_WIDTH  = TOUCH_CAL_X2 - TOUCH_CAL_X1;
-static int16 TOUCH_HEIGHT = TOUCH_CAL_Y2 - TOUCH_CAL_Y1;
-static int16 CNTRL_WIDTH  = TOUCH_CNTRL_X2 - TOUCH_CNTRL_X1;
-static int16 CNTRL_HEIGHT = TOUCH_CNTRL_Y2 - TOUCH_CNTRL_Y1;
-
-
-// reading pixel position:
-int16 x = (IPC->touchX - (int16) TOUCH_CAL_X1) * CNTRL_WIDTH  / TOUCH_WIDTH  + (int16) TOUCH_CNTRL_X1;
-int16 y = (IPC->touchY - (int16) TOUCH_CAL_Y1) * CNTRL_HEIGHT / TOUCH_HEIGHT + (int16) TOUCH_CNTRL_Y1; 
-
-*/
+//---------------------------------------------------------------------------------
 int main(int argc, char ** argv) {
-
-	TOUCH_WIDTH  = PersonalData->calX2 - PersonalData->calX1; //TOUCH_CAL_X2 - TOUCH_CAL_X1;
-	TOUCH_HEIGHT = PersonalData->calY2 - PersonalData->calY1; //TOUCH_CAL_Y2 - TOUCH_CAL_Y1;
-	TOUCH_OFFSET_X = ( ((SCREEN_WIDTH -60) * PersonalData->calX1) / TOUCH_WIDTH  ) - 28;
-	TOUCH_OFFSET_Y = ( ((SCREEN_HEIGHT-60) * PersonalData->calY1) / TOUCH_HEIGHT ) - 28;
+//---------------------------------------------------------------------------------
 
 	// Reset the clock if needed
 	rtcReset();
 
 	//enable sound
+	powerON(POWER_SOUND);
 	SOUND_CR = SOUND_ENABLE | SOUND_VOL(0x7F);
 	IPC->soundData = 0;
  
@@ -192,13 +148,9 @@ int main(int argc, char ** argv) {
 	DISP_SR = DISP_VBLANK_IRQ;
 	IME = 1;
 	
-	//
-//	IPC->jump = 0;
 
 	// Keep the ARM7 out of main RAM
 	while (1) swiWaitForVBlank();
-//	return 0;
 }
 
  
-//////////////////////////////////////////////////////////////////////
