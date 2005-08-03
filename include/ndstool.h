@@ -9,7 +9,7 @@
 #include "little.h"
 #include "header.h"
 
-#define VER			"1.21"
+#define VER			"1.22"
 
 #define ROMTYPE_HOMEBREW	0
 #define ROMTYPE_MULTIBOOT	1
