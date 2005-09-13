@@ -66,7 +66,7 @@ int CopyFromElf(char *elfFilename, unsigned int *entry, unsigned int *ram_addres
 	Elf32_Ehdr *ehdr;
 	if ((ehdr = elf32_getehdr(elf)) == 0) { fprintf(stderr, "Cannot read ELF header!\n"); exit(1); }
 	if (ehdr->e_machine != EM_ARM) { fprintf(stderr, "Not an ARM ELF file!\n"); exit(1); }
-	
+
 	*entry = ehdr->e_entry;
 	*size = 0;
 	*ram_address = 0;
@@ -114,7 +114,7 @@ int CopyFromElf(char *elfFilename, unsigned int *entry, unsigned int *ram_addres
 		scn = elf_nextscn(elf, scn);
 		shdr = elf32_getshdr(scn);
     }
- 
+
 	elf_end(elf);
 
 	return 0;
@@ -127,7 +127,7 @@ void Create()
 {
 	fNDS = fopen(ndsfilename, "wb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
-	
+
 	// initial header data
 	if (headerfilename)
 	{
@@ -244,7 +244,7 @@ void Create()
 		unsigned_int x1 = 0xDEC00621; fwrite(&x1, sizeof(x1), 1, fNDS);		// ???
 		unsigned_int x2 = 0x00000AD8; fwrite(&x2, sizeof(x2), 1, fNDS);		// ???
 		unsigned_int x3 = 0x00000000; fwrite(&x3, sizeof(x3), 1, fNDS);		// ???
-		
+
 		header.arm9_overlay_offset = ftell(fNDS);		// do not align
 		fseek(fNDS, header.arm9_overlay_offset, SEEK_SET);
 		unsigned int size = 0;
@@ -381,6 +381,6 @@ void Create()
 	header.header_crc = CalcHeaderCRC(header);
 	fseek(fNDS, 0, SEEK_SET);
 	fwrite(&header, 0x200, 1, fNDS);
-	
+
 	fclose(fNDS);
 }
