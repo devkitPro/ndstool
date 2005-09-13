@@ -2,9 +2,9 @@
 Signature=UE Proj: v.1
 [Open Files]
 Open File0=
-Open File Pos0=285
-Open File Line0=3008
-Open File Window Pos0=2,3,-1,-1,-4,-23,0,0,873,440
+Open File Pos0=1094
+Open File Line0=0
+Open File Window Pos0=2,3,-1,-1,-4,-23,0,0,908,359
 Open File1=
 Open File Pos1=0
 Open File Line1=708
@@ -21,7 +21,7 @@ Open File Window Pos3=0,1,-1,-1,-4,-23,176,176,1020,574
 Open File4=
 Active File Display Mode=-1
 [File View]
-Current Select=Project Files\
+Current Select=Project Files
 Scroll Position=0
 [Project Information]
 Filter=*.*
