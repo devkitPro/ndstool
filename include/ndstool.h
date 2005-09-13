@@ -9,7 +9,6 @@
 #include "little.h"
 #include "header.h"
 
-#define VER			"1.22"
 
 #define ROMTYPE_HOMEBREW	0
 #define ROMTYPE_MULTIBOOT	1
@@ -25,7 +24,7 @@ struct Tree
 	char *name;				// file or directory name
 	Tree *directory;		// nonzero indicates directory. first tree node is a dummy
 	Tree *next;				// linked list
-	
+
 	Tree()
 	{
 		dir_id = 0;

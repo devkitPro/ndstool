@@ -3,7 +3,8 @@
 	by Rafael Vuijk (aka DarkFader)
 */
 
-#include "ndstool.h"
+#include <ndstool.h>
+#include <ndstool_version.h>
 #include <unistd.h>
 
 /*
@@ -87,7 +88,7 @@ int main(int argc, char *argv[])
 		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); exit(1); }
 	#endif
 
-	printf("Nintendo DS rom tool "VER" - %s by Rafael Vuijk (aka DarkFader)\n",__DATE__);
+	printf("Nintendo DS rom tool "VER" - %s %s by Rafael Vuijk (aka DarkFader)\n",CompileDate,CompileTime);
 	if (argc < 2) { Help(); return 0; }
 
 	// what to do
@@ -114,7 +115,7 @@ int main(int argc, char *argv[])
 					FixHeaderCRC(ndsfilename);
 					return 0;
 				}
-				
+
 				case 's':	// en-/decrypt secure area
 				{
 					if (EncryptSecureArea)
@@ -149,7 +150,7 @@ int main(int argc, char *argv[])
 					if (!ndsfilename) return 1;
 					break;
 				}
-				
+
 				// create/extract options
 				case 'd': filerootdir = (argc > a) ? argv[++a] : 0; break;
 				case '7': arm7filename = (argc > a) ? argv[++a] : 0; break;
@@ -208,7 +209,7 @@ int main(int argc, char *argv[])
 						exit(1);
 					}
 					break;
-				
+
 				case 'g':	// game code
 					gamecode = (argc > a) ? argv[++a] : 0;
 					if (strlen(gamecode) != 4) {

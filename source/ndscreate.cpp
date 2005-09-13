@@ -1,5 +1,6 @@
 #include <time.h>
-#include "ndstool.h"
+#include <ndstool.h>
+#include <ndstool_version.h>
 #include "default_arm7.h"
 #include "logo.h"
 #include "raster.h"
@@ -8,6 +9,9 @@
 #include "loadme.h"
 
 unsigned int overlay_files = 0;
+const char CompileDate[] = __DATE__;
+const char CompileTime[] = __TIME__;
+
 
 /*
  * HasElfExtension
