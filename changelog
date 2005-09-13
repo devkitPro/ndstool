@@ -6,6 +6,10 @@ CVS admins / additional code:
 	natrium42 <natrium@gmail.com>
 	WinterMute <wntrmute@gmail.com>
 
+v1.23 - update default ARM7 for latest libnds
+	add time to version & date reporting
+	use cpufastset swi for loader
+
 v1.22 - fixed sound core in default ARM7
 v1.21 - added signature check, CRC32
 v1.20 - fixed filesystem stuff, added overlay support
