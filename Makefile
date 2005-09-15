@@ -121,7 +121,7 @@ clean:
 	@echo clean ...
 	@make -C DefaultArm7 clean
 	@make -C Loader clean
-	@rm -fr $(BUILD) *.exe
+	@rm -fr $(BUILD) $(OUTPUT)
 
 #---------------------------------------------------------------------------------
 all: clean $(BUILD)
