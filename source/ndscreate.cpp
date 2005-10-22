@@ -331,6 +331,7 @@ void Create()
 	}
 
 	// filesystem
+	if (filerootdir || overlaydir)
 	{
 		// read directory structure
 		Tree *filetree = new Tree();		// dummy root node 0xF000
