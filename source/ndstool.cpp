@@ -48,7 +48,7 @@ void Help(char *unknownoption = 0)
 	printf("Parameter              Syntax                         Comments\n");
 	printf("---------              ------                         --------\n");
 	printf("Show information:      -i file.nds\n");
-	printf("Show more information: -v -i file.nds\n");
+	printf("Show more information: -v -i file.nds                 checksums and warnings\n");
 	printf("Fix header CRC         -f file.nds\n");
 	if (EncryptSecureArea)
 	printf("En/decrypt secure area -s file.nds\n");
