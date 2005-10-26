@@ -89,6 +89,7 @@ unsigned short CalcLogoCRC(Header &header);
 unsigned short CalcSecureAreaCRC();
 void FixHeaderCRC(char *ndsfilename);
 void ShowInfo(char *ndsfilename);
+int HashAndCompareWithList(char *filename, unsigned char sha1[]);
 
 extern void EnDecryptSecureArea(char *ndsfilename);
 extern void (*EncryptSecureArea)(unsigned char *data);

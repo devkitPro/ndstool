@@ -6,6 +6,10 @@
 #include <ndstool.h>
 #include <ndstool_version.h>
 #include <unistd.h>
+#include "sha1.h"
+#include "ndscreate.h"
+#include "ndsextract.h"
+#include "passme.h"
 
 /*
  * Variables
@@ -49,10 +53,12 @@ void Help(char *unknownoption = 0)
 	printf("---------              ------                         --------\n");
 	printf("Show information:      -i file.nds\n");
 	printf("Show more information: -v -i file.nds                 checksums and warnings\n");
+	printf("PassMe:                -p file.nds\n");
 	printf("Fix header CRC         -f file.nds\n");
 	if (EncryptSecureArea)
 	printf("En/decrypt secure area -s file.nds\n");
 	//printf("Sign multiboot         -n file.nds");
+	//printf("Hash file & compare:   -@ arm7.bin\n");		// used in buildscript
 	printf("List files:            -l file.nds\n");
 	printf("Create                 -c file.nds\n");
 	printf("Extract                -x file.nds\n");
@@ -126,10 +132,17 @@ int main(int argc, char *argv[])
 					}
 				}
 
+				case 'p':	// PassMe
+				{
+					ndsfilename = (argc > a) ? argv[++a] : 0;
+					PassMe(ndsfilename);
+					return 0;
+				}
+
 				case 'l':	// list files
 				{
 					ndsfilename = (argc > a) ? argv[++a] : 0;
-					ExtractFiles();
+					ExtractFiles(ndsfilename);
 					return 0;
 				}
 
@@ -155,6 +168,20 @@ int main(int argc, char *argv[])
 				case 'd': filerootdir = (argc > a) ? argv[++a] : 0; break;
 				case '7': arm7filename = (argc > a) ? argv[++a] : 0; break;
 				case '9': arm9filename = (argc > a) ? argv[++a] : 0; break;
+
+				// hash file
+				case '@':
+				{
+					unsigned char sha1[SHA1_DIGEST_SIZE];
+					int r = HashAndCompareWithList(argv[++a], sha1);
+					if (r < 0) return 1;
+					if (r > 0)
+					{
+						for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", sha1[i]);
+						printf("\n");
+					}
+					return 1;
+				}
 
 				case 't':
 					bannerfilename = (argc > a) ? argv[++a] : 0;
@@ -266,7 +293,7 @@ int main(int argc, char *argv[])
 		if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
 		if (arm7ovltablefilename) Extract(arm7ovltablefilename, true, 0x58, true, 0x5C);
 		if (overlaydir) ExtractOverlayFiles();
-		if (filerootdir) ExtractFiles();
+		if (filerootdir) ExtractFiles(ndsfilename);
 	}
 	else if (create)
 	{

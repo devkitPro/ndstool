@@ -137,7 +137,7 @@ void ExtractDirectory(char *prefix, unsigned int dir_id)
 /*
  * ExtractFiles
  */
-void ExtractFiles()
+void ExtractFiles(char *ndsfilename)
 {
 	fNDS = fopen(ndsfilename, "rb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
