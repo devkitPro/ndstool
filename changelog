@@ -6,10 +6,12 @@ CVS admins / additional code:
 	natrium42 <natrium@gmail.com>
 	WinterMute <wntrmute@gmail.com>
 
+Update version in include/ndstool_version.h
+
+v1.24 - PassMe vhdl generator, default ARM7 hash checking
 v1.23 - update default ARM7 for latest libnds
 	add time to version & date reporting
 	use cpufastset swi for loader
-
 v1.22 - fixed sound core in default ARM7
 v1.21 - added signature check, CRC32
 v1.20 - fixed filesystem stuff, added overlay support

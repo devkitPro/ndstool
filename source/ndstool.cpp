@@ -39,10 +39,21 @@ unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
 
 /*
+ * Title
+ */
+void Title()
+{
+	printf("Nintendo DS rom tool "VER" - %s %s by Rafael Vuijk (aka DarkFader)\n",CompileDate,CompileTime);
+	if (EncryptSecureArea) printf("WARNING: This is a private version!\n");
+}
+
+/*
  * Help
  */
 void Help(char *unknownoption = 0)
 {
+	Title();
+
 	if (unknownoption)
 	{
 		printf("Unknown option: %s\n\n", unknownoption);
@@ -94,7 +105,6 @@ int main(int argc, char *argv[])
 		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); exit(1); }
 	#endif
 
-	printf("Nintendo DS rom tool "VER" - %s %s by Rafael Vuijk (aka DarkFader)\n",CompileDate,CompileTime);
 	if (argc < 2) { Help(); return 0; }
 
 	// what to do
@@ -177,8 +187,9 @@ int main(int argc, char *argv[])
 					if (r < 0) return 1;
 					if (r > 0)
 					{
-						for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", sha1[i]);
+						for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02x", sha1[i]);
 						printf("\n");
+						return 0;
 					}
 					return 1;
 				}
@@ -278,6 +289,8 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 	}
+
+	Title();
 
 	if (extract && create)
 	{

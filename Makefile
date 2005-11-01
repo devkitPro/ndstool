@@ -112,9 +112,21 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
+	@make PassMeIncludes
 	@make -C DefaultArm7
 	@make -C Loader
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@ndstool -@ DefaultArm7/default_arm7.bin && echo For official devkitPro releases, add this SHA1 hash of default ARM7 binary to data/arm7_sha1_homebrew.bin and recompile. || echo -n
+
+#---------------------------------------------------------------------------------
+.PHONY: PassMeIncludes
+PassMeIncludes: $(BUILD)/passme_vhd1.h $(BUILD)/passme_vhd2.h
+
+$(BUILD)/passme_vhd1.h: $(SOURCES)/passme.vhd
+	cat $< | gawk '/\/\*/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (!COND) print "\"" $$0 "\\n\"" }' > $@
+
+$(BUILD)/passme_vhd2.h: $(SOURCES)/passme.vhd
+	cat $< | gawk '/\/\*/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (COND) print "\"" $$0 "\\n\"" }' > $@
 
 #---------------------------------------------------------------------------------
 clean:

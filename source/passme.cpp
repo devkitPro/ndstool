@@ -1,7 +1,6 @@
 #include "ndstool.h"
 #include "crc16.h"
 
-
 #define DS_RAM			0x02000000
 #define RAM_SIZE		(4*1024*1024)
 unsigned char *pc_ram;
@@ -38,10 +37,10 @@ void PassMe(char *ndsfilename)
 
 	pc_ram = new unsigned char[RAM_SIZE];
 
-	printf("GAME   ");
+	printf("-- PassMe for game: ");
 	for (unsigned int i=0; i<sizeof(header.gamecode); i++) printf("%c", header.gamecode[i]);
-	printf("-%d ", header.romversion);
-	for (unsigned int i=0; i<sizeof(header.title); i++) printf("%c", header.title[i]);
+	printf("_%d - ", header.romversion);
+	for (unsigned int i=0; i<sizeof(header.title); i++) if (header.title[i]) printf("%c", header.title[i]);
 	printf("\n");
 
 	// load ARM7 binary
@@ -52,20 +51,24 @@ void PassMe(char *ndsfilename)
 	fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
 	fread(pc_ram + header.arm9_ram_address - DS_RAM, 1, header.arm9_size, fNDS);
 
+	unsigned char old_header[512];
+	memcpy(old_header, &header, 512);
 
-	if (!Find<unsigned long>("BX LR  %08X\n", 0x02000000, 0x02280000, 0xE120001E, 0xFFF000FF, 0))		// BX LR
-	if (!Find<unsigned short>("BX LR  %08X\n", 0x02000000, 0x02280000, 0x4770, 0xFFFF, 1))				// BX LR
-	printf("BX LR  not found!\n");
+	bool bError = false;
 
-	if (!Find<unsigned long>("SWI FF %08X\n", 0x02000000, 0x023FE000, 0xEFFF0000, 0xFFFF0000, 0))		// SWI
-	if (!Find<unsigned long>("SWI EA %08X\n", 0x02000000, 0x023FE000, 0xEFEA0000, 0xFFFF0000, 0))		// SWI
-	if (!Find<unsigned long>("SWI A4 %08X\n", 0x02000000, 0x023FE000, 0xEFA40000, 0xFFFF0000, 0))		// SWI
-	if (!Find<unsigned long>("SWI AF %08X\n", 0x02000000, 0x023FE000, 0xEFAF0000, 0xFFFF0000, 0))		// SWI
-	if (!Find<unsigned short>("SWI FF %08X\n", 0x02000000, 0x023FE000, 0xDFFF, 0xFFFF, 1))				// SWI
-	if (!Find<unsigned short>("SWI EA %08X\n", 0x02000000, 0x023FE000, 0xDFEA, 0xFFFF, 1))				// SWI
-	if (!Find<unsigned short>("SWI A4 %08X\n", 0x02000000, 0x023FE000, 0xDFA4, 0xFFFF, 1))				// SWI
-	if (!Find<unsigned short>("SWI AF %08X\n", 0x02000000, 0x023FE000, 0xDFAF, 0xFFFF, 1))				// SWI
-	printf("SWI    not found!\n");
+	if (!Find<unsigned long>("-- BX LR @ 0x%08X\n", 0x02000000, 0x02280000, 0xE120001E, 0xFFF000FF, 0))		// BX LR
+	if (!Find<unsigned short>("-- BX LR @ 0x%08X\n", 0x02000000, 0x02280000, 0x4770, 0xFFFF, 1))				// BX LR
+	{ printf("BX LR instruction not found!\n"); bError = true; }
+
+	if (!Find<unsigned long>("-- SWI 0xFF @ 0x%08X\n", 0x02000000, 0x023FE000, 0xEFFF0000, 0xFFFF0000, 0))		// SWI
+	if (!Find<unsigned long>("-- SWI 0xEA @ 0x%08X\n", 0x02000000, 0x023FE000, 0xEFEA0000, 0xFFFF0000, 0))		// SWI
+	if (!Find<unsigned long>("-- SWI 0xA4 @ 0x%08X\n", 0x02000000, 0x023FE000, 0xEFA40000, 0xFFFF0000, 0))		// SWI
+	if (!Find<unsigned long>("-- SWI 0xAF @ 0x%08X\n", 0x02000000, 0x023FE000, 0xEFAF0000, 0xFFFF0000, 0))		// SWI
+	if (!Find<unsigned short>("-- SWI 0xFF @ 0x%08X\n", 0x02000000, 0x023FE000, 0xDFFF, 0xFFFF, 1))				// SWI
+	if (!Find<unsigned short>("-- SWI 0xEA @ 0x%08X\n", 0x02000000, 0x023FE000, 0xDFEA, 0xFFFF, 1))				// SWI
+	if (!Find<unsigned short>("-- SWI 0xA4 @ 0x%08X\n", 0x02000000, 0x023FE000, 0xDFA4, 0xFFFF, 1))				// SWI
+	if (!Find<unsigned short>("-- SWI 0xAF @ 0x%08X\n", 0x02000000, 0x023FE000, 0xDFAF, 0xFFFF, 1))				// SWI
+	{ printf("SWI instruction not found!\n"); bError = true; }
 
 	//Find<unsigned long>("%08X\n", 0x037F8000, 0x0380F000, 0xEFEA0000, 0xFFFF0000, 0);		// SWI
 	//...
@@ -73,11 +76,32 @@ void PassMe(char *ndsfilename)
 	//Find<unsigned short>("%08X\n", 0x037F8000, 0x0380F000, 0xDFA4, 0xFFFF, 1);				// SWI
 	//...
 
+	if (bError)
+	{
+		printf("Sorry.\n");
+	}
+	else
+	{
+		header.reserved2 |= 0x04;	// set autostart bit
+	
+		header.header_crc = CalcCRC((unsigned char *)&header, 0x15E);
+	
+		puts(
+			#include "passme_vhd1.h"
+		);
 
-	//*(unsigned short *)(header + 0x15E) = CalcCRC(header, 0x15E);
-	//printf("CRC16  %04X\n", *(unsigned short *)(header + 0x15E));
+		for (int i=0; i<512; i++)
+		{
+			if (((unsigned char *)&header)[i] != old_header[i])
+			{
+				printf("\t\t\twhen 16#%03X# => patched_data <= X\"%02X\";\n", i, ((unsigned char *)&header)[i]);
+			}
+		}
 
-	printf("---\n");
+		puts(
+			#include "passme_vhd2.h"
+		);	
+	}
 
 	fclose(fNDS);
 }
