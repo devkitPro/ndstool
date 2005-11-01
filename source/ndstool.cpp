@@ -64,7 +64,7 @@ void Help(char *unknownoption = 0)
 	printf("---------              ------                         --------\n");
 	printf("Show information:      -i file.nds\n");
 	printf("Show more information: -v -i file.nds                 checksums and warnings\n");
-	printf("PassMe:                -p file.nds\n");
+	printf("PassMe:                -p file.nds passme.vhd passme.sav\n");
 	printf("Fix header CRC         -f file.nds\n");
 	if (EncryptSecureArea)
 	printf("En/decrypt secure area -s file.nds\n");
@@ -145,7 +145,9 @@ int main(int argc, char *argv[])
 				case 'p':	// PassMe
 				{
 					ndsfilename = (argc > a) ? argv[++a] : 0;
-					PassMe(ndsfilename);
+					char *vhdfilename = (argc > a) ? argv[++a] : 0;
+					char *sramfilename = (argc > a) ? argv[++a] : 0;
+					PassMe(ndsfilename, vhdfilename, sramfilename);
 					return 0;
 				}
 

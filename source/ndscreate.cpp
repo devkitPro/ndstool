@@ -322,8 +322,9 @@ void Create()
 	else if (!headerfilename)	// homebrew?
 	{
 		if (loadme_size != 156) { fprintf(stderr, "loadme size error\n"); exit(1); }
-		memcpy(header.logo, loadme, loadme_size);	// self-contained NDS loader
-		memcpy(&header.offset_0xAC, "PASS", 4);		// automatically start
+		memcpy(header.logo, loadme, loadme_size);		// self-contained NDS loader for *Me GBA cartridge boot
+		memcpy(&header.offset_0xA0, "SRAM_V110", 9);		// allow GBA cartridge SRAM backup
+		memcpy(&header.offset_0xAC, "PASS01\x96", 7);		// automatically start with FlashMe, make it look more like a GBA rom
 	}
 
 	// unique ID... just for homebrew, not very used... obsolete?

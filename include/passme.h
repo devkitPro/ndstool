@@ -1,1 +1,1 @@
-void PassMe(char *ndsfilename);
+void PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename);
