@@ -38,16 +38,13 @@ template <typename T> unsigned long Find(FILE *f, char *fmt, unsigned long begin
 /*
  * PassMe
  */
-void PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
+int PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 {
 	fNDS = fopen(ndsfilename, "rb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 
 	FILE *fVHD = fopen(vhdfilename, "wt");
 	if (!fVHD) { fprintf(stderr, "Cannot open file '%s'.\n", vhdfilename); exit(1); }
-
-	FILE *fSRAM = fopen(sramfilename, "wb");
-	if (!fSRAM) { fprintf(stderr, "Cannot open file '%s'.\n", sramfilename); exit(1); }
 
 	fread(&header, 512, 1, fNDS);
 
@@ -66,6 +63,11 @@ void PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 	// load ARM9 binary
 	fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
 	fread(pc_ram + header.arm9_ram_address - DS_RAM, 1, header.arm9_size, fNDS);
+
+
+	header.arm7_entry_address = 0x55555555;
+	header.arm9_entry_address = 0x55555555;
+
 
 	unsigned char old_header[512];
 	memcpy(old_header, &header, 512);
@@ -99,6 +101,7 @@ void PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 	if (bError)
 	{
 		printf("Sorry.\n");
+		return -1;
 	}
 	else
 	{
@@ -107,6 +110,9 @@ void PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 		 */
 
 		header.reserved2 |= 0x04;	// set autostart bit
+		
+		bool forcepatch[512];
+		memset(forcepatch, 0, sizeof(forcepatch));
 
 		// ldr pc, 0x027FFE24
 		((unsigned char *)&header)[0x4] = 0x18;
@@ -140,6 +146,8 @@ void PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 		 * SRAM
 		 */
 
+		FILE *fSRAM = fopen(sramfilename, "wb");
+		if (!fSRAM) { fprintf(stderr, "Cannot open file '%s'.\n", sramfilename); exit(1); }
 		for (int i=0; i<passme_sram_size; i++)
 		{
 			unsigned char c = passme_sram[i];
@@ -154,4 +162,6 @@ void PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 	}
 
 	fclose(fNDS);
+	
+	return 0;
 }

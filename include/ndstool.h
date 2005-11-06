@@ -32,6 +32,7 @@ extern unsigned int file_top;
 extern bool verbose;
 extern Header header;
 extern FILE *fNDS;
+extern char *romlistfilename;
 extern char *ndsfilename;
 extern char *arm7filename;
 extern char *arm9filename;

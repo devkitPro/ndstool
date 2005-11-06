@@ -17,6 +17,7 @@
 bool verbose = false;
 Header header;
 FILE *fNDS = 0;
+char *romlistfilename = 0;
 char *ndsfilename = 0;
 char *arm7filename = 0;
 char *arm9filename = 0;
@@ -63,7 +64,7 @@ void Help(char *unknownoption = 0)
 	printf("Parameter              Syntax                         Comments\n");
 	printf("---------              ------                         --------\n");
 	printf("Show information:      -i file.nds\n");
-	printf("Show more information: -v -i file.nds                 checksums and warnings\n");
+	printf("Show more information: -v -i file.nds [roms_rc.dat]   checksums and warnings\n");
 	printf("PassMe:                -p file.nds passme.vhd passme.sav\n");
 	printf("Fix header CRC         -f file.nds\n");
 	if (EncryptSecureArea)
@@ -121,6 +122,7 @@ int main(int argc, char *argv[])
 				case 'i':	// show information
 				{
 					ndsfilename = (argc > a) ? argv[++a] : 0;
+					romlistfilename = (argc > a) ? argv[++a] : 0;
 					ShowInfo(ndsfilename);
 					return 0;
 				}
@@ -147,7 +149,7 @@ int main(int argc, char *argv[])
 					ndsfilename = (argc > a) ? argv[++a] : 0;
 					char *vhdfilename = (argc > a) ? argv[++a] : 0;
 					char *sramfilename = (argc > a) ? argv[++a] : 0;
-					PassMe(ndsfilename, vhdfilename, sramfilename);
+					if (PassMe(ndsfilename, vhdfilename, sramfilename) < 0) return 1;
 					return 0;
 				}
 
@@ -189,7 +191,7 @@ int main(int argc, char *argv[])
 					if (r < 0) return 1;
 					if (r > 0)
 					{
-						for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02x", sha1[i]);
+						for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", sha1[i]);
 						printf("\n");
 						return 0;
 					}
