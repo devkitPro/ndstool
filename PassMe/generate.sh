@@ -3,7 +3,7 @@
 
 PATH=..:$PATH
 DATZIP2FILE=romlist.zip
-NUMBERED=romlist.dat
+NUMBERED=romlist_n.dat
 UNNUMBERED=romlist_u.dat
 TMPFILE=info.tmp
 NDSDIR=C:/public/nds
@@ -15,20 +15,18 @@ PASSMEDIR2=C:/public/nds/passme
 # retrieve latest numbered DAT file
 DATZIPFILE=`curl -s --url "http://releases.pocketheaven.com/" | gawk '{ if (match($0, "PocketHeaven_NDS-Numbered_Release_List_Roms.*RC..zip")) print substr(\$0, RSTART, RLENGTH); }'`
 DATZIPURL="http://releases.pocketheaven.com/dats/$DATZIPFILE"
-wget -q -O "$DATZIP2FILE" "$DATZIPURL"
-rm *.dat
+wget -U "Mozilla" -O "$DATZIP2FILE" "$DATZIPURL"
 unzip -x "$DATZIP2FILE" "*.dat"
 rm "$DATZIP2FILE"
-mv *.dat "$NUMBERED"
+mv PocketHeaven*.dat "$NUMBERED"
 
 # retrieve latest unnumbered DAT file
-DATZIPFILE=`curl -s --url "http://releases.pocketheaven.com/" | gawk '{ if (match($0, "PocketHeaven_NDS-Unnumbered_Release_List_Roms.*RC..zip")) print substr(\$0, RSTART, RLENGTH); }'`
+DATZIPFILE=`curl -s --url "http://releases.pocketheaven.com/" | gawk '{ if (match($0, "PocketHeaven_NDS-Other_Release_List_Roms.*RC..zip")) print substr(\$0, RSTART, RLENGTH); }'`
 DATZIPURL="http://releases.pocketheaven.com/dats/$DATZIPFILE"
-wget -q -O "$DATZIP2FILE" "$DATZIPURL"
-rm *.dat
+wget -U "Mozilla" -O "$DATZIP2FILE" "$DATZIPURL"
 unzip -x "$DATZIP2FILE" "*.dat"
 rm "$DATZIP2FILE"
-mv *.dat "$UNNUMBERED"
+mv PocketHeaven*.dat "$UNNUMBERED"
 
 # clean files
 rm $NDSDIR/*.nfo $NDSDIR/*.jpg $NDSDIR/*.png $NDSDIR/*.diz
