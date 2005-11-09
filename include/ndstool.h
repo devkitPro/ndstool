@@ -15,6 +15,8 @@
 #define ROMTYPE_ENCRSECURE	3
 #define ROMTYPE_MASKROM		4	// unknown layout
 
+#define MAX_FILEMASKS		16
+
 enum { BANNER_BINARY, BANNER_IMAGE };
 
 extern unsigned int free_file_id;
@@ -33,6 +35,8 @@ extern bool verbose;
 extern Header header;
 extern FILE *fNDS;
 extern char *romlistfilename;
+extern char *filemasks[MAX_FILEMASKS];
+extern int filemask_num;
 extern char *ndsfilename;
 extern char *arm7filename;
 extern char *arm9filename;

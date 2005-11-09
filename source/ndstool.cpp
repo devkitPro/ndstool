@@ -18,6 +18,8 @@ bool verbose = false;
 Header header;
 FILE *fNDS = 0;
 char *romlistfilename = 0;
+char *filemasks[MAX_FILEMASKS];
+int filemask_num = 0;
 char *ndsfilename = 0;
 char *arm7filename = 0;
 char *arm9filename = 0;
@@ -65,7 +67,7 @@ void Help(char *unknownoption = 0)
 	printf("---------              ------                         --------\n");
 	printf("Show information:      -i file.nds\n");
 	printf("Show more information: -v -i file.nds [roms_rc.dat]   checksums and warnings\n");
-	printf("PassMe:                -p file.nds passme.vhd passme.sav\n");
+	printf("PassMe:                -p file.nds [passme.vhd] [passme.sav]\n");
 	printf("Fix header CRC         -f file.nds\n");
 	if (EncryptSecureArea)
 	printf("En/decrypt secure area -s file.nds\n");
@@ -73,7 +75,7 @@ void Help(char *unknownoption = 0)
 	//printf("Hash file & compare:   -@ arm7.bin\n");		// used in buildscript
 	printf("List files:            -l file.nds\n");
 	printf("Create                 -c file.nds\n");
-	printf("Extract                -x file.nds\n");
+	printf("Extract                -x file.nds [filemask]...\n");
 	printf("Create/Extract options:\n");
 	printf("  verbose              -v                             optional\n");
 	printf("\n");
@@ -97,6 +99,9 @@ void Help(char *unknownoption = 0)
 	printf("  ARM7 RAM entry       -e7 address                    optional, 0x prefix for hex\n");
 }
 
+#define REQUIRED()		((argc > a+1) ? argv[++a] : 0)
+#define OPTIONAL()		((argc > a+1) && (argv[a+1][0] != '-') ? argv[++a] : 0)
+
 /*
  * main
  */
@@ -111,6 +116,8 @@ int main(int argc, char *argv[])
 	// what to do
 	bool extract = false;
 	bool create = false;
+	
+	int status = 0;
 
 	// parse parameters
 	for (int a=1; a<argc; a++)
@@ -121,43 +128,43 @@ int main(int argc, char *argv[])
 			{
 				case 'i':	// show information
 				{
-					ndsfilename = (argc > a) ? argv[++a] : 0;
-					romlistfilename = (argc > a) ? argv[++a] : 0;
+					ndsfilename = REQUIRED();
+					romlistfilename = OPTIONAL();
 					ShowInfo(ndsfilename);
-					return 0;
+					break;
 				}
 
 				case 'f':	// fix header CRC
 				{
-					ndsfilename = (argc > a) ? argv[++a] : 0;
+					ndsfilename = REQUIRED();
 					FixHeaderCRC(ndsfilename);
-					return 0;
+					break;
 				}
 
 				case 's':	// en-/decrypt secure area
 				{
 					if (EncryptSecureArea)
 					{
-						ndsfilename = (argc > a) ? argv[++a] : 0;
+						ndsfilename = REQUIRED();
 						EnDecryptSecureArea(ndsfilename);
-						return 0;
 					}
+					break;
 				}
 
 				case 'p':	// PassMe
 				{
-					ndsfilename = (argc > a) ? argv[++a] : 0;
-					char *vhdfilename = (argc > a) ? argv[++a] : 0;
-					char *sramfilename = (argc > a) ? argv[++a] : 0;
-					if (PassMe(ndsfilename, vhdfilename, sramfilename) < 0) return 1;
-					return 0;
+					ndsfilename = REQUIRED();
+					char *vhdfilename = OPTIONAL();
+					char *sramfilename = OPTIONAL();
+					status = PassMe(ndsfilename, vhdfilename, sramfilename);
+					break;
 				}
 
 				case 'l':	// list files
 				{
-					ndsfilename = (argc > a) ? argv[++a] : 0;
+					ndsfilename = REQUIRED();
 					ExtractFiles(ndsfilename);
-					return 0;
+					break;
 				}
 
 				///
@@ -165,7 +172,12 @@ int main(int argc, char *argv[])
 				case 'x':	// extract
 				{
 					extract = true;
-					ndsfilename = (argc > a) ? argv[++a] : 0;
+					ndsfilename = REQUIRED();
+					while (1)
+					{
+						if (!(filemasks[filemask_num] = OPTIONAL())) break;
+						if (++filemask_num >= MAX_FILEMASKS) return 1;
+					}
 					if (!ndsfilename) return 1;
 					break;
 				}
@@ -173,52 +185,53 @@ int main(int argc, char *argv[])
 				case 'c':	// create
 				{
 					create = true;
-					ndsfilename = (argc > a) ? argv[++a] : 0;
+					ndsfilename = REQUIRED();
 					if (!ndsfilename) return 1;
 					break;
 				}
 
 				// create/extract options
-				case 'd': filerootdir = (argc > a) ? argv[++a] : 0; break;
-				case '7': arm7filename = (argc > a) ? argv[++a] : 0; break;
-				case '9': arm9filename = (argc > a) ? argv[++a] : 0; break;
+				case 'd': filerootdir = REQUIRED(); break;
+				case '7': arm7filename = REQUIRED(); break;
+				case '9': arm9filename = REQUIRED(); break;
 
 				// hash file
 				case '@':
 				{
 					unsigned char sha1[SHA1_DIGEST_SIZE];
-					int r = HashAndCompareWithList(argv[++a], sha1);
-					if (r < 0) return 1;
+					char *filename = REQUIRED();
+					int r = HashAndCompareWithList(filename, sha1);
+					status = -1;
 					if (r > 0)
 					{
 						for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", sha1[i]);
 						printf("\n");
-						return 0;
+						status = 0;
 					}
-					return 1;
+					break;
 				}
 
 				case 't':
-					bannerfilename = (argc > a) ? argv[++a] : 0;
+					bannerfilename = REQUIRED();
 					bannertype = BANNER_BINARY;
 					break;
 
 				case 'b':
 					bannertype = BANNER_IMAGE;
-					bannerfilename = (argc > a) ? argv[++a] : 0;
-					bannertext = (argc > a) ? argv[++a] : 0;
+					bannerfilename = REQUIRED();
+					bannertext = REQUIRED();
 					break;
 
 				case 'o':
-					logofilename = (argc > a) ? argv[++a] : 0;
+					logofilename = REQUIRED();
 					break;
 
 				case 'h':	// load header
-					headerfilename = (argc > a) ? argv[++a] : 0;
+					headerfilename = REQUIRED();
 					break;
 
 				case 'u':	// unique ID file
-					uniquefilename = (argc > a) ? argv[++a] : 0;
+					uniquefilename = REQUIRED();
 					break;
 
 				case 'v':	// verbose
@@ -244,7 +257,7 @@ int main(int argc, char *argv[])
 					break;
 
 				case 'm':	// maker code
-					makercode = (argc > a) ? argv[++a] : 0;
+					makercode = REQUIRED();
 					if (strlen(makercode) != 2)
 					{
 						fprintf(stderr, "Maker code must be 2 characters!\n");
@@ -253,7 +266,7 @@ int main(int argc, char *argv[])
 					break;
 
 				case 'g':	// game code
-					gamecode = (argc > a) ? argv[++a] : 0;
+					gamecode = REQUIRED();
 					if (strlen(gamecode) != 4) {
 						fprintf(stderr, "Game code must be 4 characters!\n");
 						exit(1);
@@ -273,9 +286,9 @@ int main(int argc, char *argv[])
 				case 'y':	// overlay table file / directory
 					switch (argv[a][2])
 					{
-						case '7': arm7ovltablefilename = (argc > a) ? argv[++a] : 0; break;
-						case '9': arm9ovltablefilename = (argc > a) ? argv[++a] : 0; break;
-						case 0: overlaydir = (argc > a) ? argv[++a] : 0; break;
+						case '7': arm7ovltablefilename = REQUIRED(); break;
+						case '9': arm9ovltablefilename = REQUIRED(); break;
+						case 0: overlaydir = REQUIRED(); break;
 						default: Help(argv[a]); return 1;
 					}
 					break;
@@ -317,5 +330,5 @@ int main(int argc, char *argv[])
 		Create();
 	}
 
-	return 0;
+	return (status < 0) ? 1 : 0;
 }

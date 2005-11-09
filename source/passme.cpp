@@ -27,11 +27,11 @@ template <typename T> unsigned long Find(FILE *f, char *fmt, unsigned long begin
 				header.arm7_entry_address = i + thumb;		// ARM7 entry
 			else
 				header.arm9_entry_address = i + thumb;		// ARM9 entry
-			fprintf(f, fmt, i + thumb);
+			if (f) fprintf(f, fmt, i + thumb);
+			printf(fmt, i + thumb);
 			return i;
 		}
 	}
-	//fprintf(f, fmt, 0);
 	return 0;
 }
 
@@ -44,15 +44,18 @@ int PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 
 	FILE *fVHD = fopen(vhdfilename, "wt");
-	if (!fVHD) { fprintf(stderr, "Cannot open file '%s'.\n", vhdfilename); exit(1); }
+	if (vhdfilename && !fVHD) { fprintf(stderr, "Cannot open file '%s'.\n", vhdfilename); exit(1); }
 
 	fread(&header, 512, 1, fNDS);
 
-	fprintf(fVHD, "-- PassMe CPLD code generated for game: ");
-	for (unsigned int i=0; i<sizeof(header.gamecode); i++) fprintf(fVHD, "%c", header.gamecode[i]);
-	fprintf(fVHD, "_%d - ", header.romversion);
-	for (unsigned int i=0; i<sizeof(header.title); i++) if (header.title[i]) fprintf(fVHD, "%c", header.title[i]);
-	fprintf(fVHD, "\n\n");
+	if (fVHD)
+	{
+		fprintf(fVHD, "-- PassMe generated CPLD code\n");
+		fprintf(fVHD, "-- Game code: \t"); for (unsigned int i=0; i<sizeof(header.gamecode); i++) fprintf(fVHD, "%c", header.gamecode[i]); fprintf(fVHD, "\n");
+		fprintf(fVHD, "-- ROM version: \t"); fprintf(fVHD, "%d\n", header.romversion);
+		fprintf(fVHD, "-- Game title: \t"); for (unsigned int i=0; i<sizeof(header.title); i++) if (header.title[i]) fprintf(fVHD, "%c", header.title[i]);
+		fprintf(fVHD, "\n\n");
+	}
 
 	pc_ram = new unsigned char[RAM_SIZE];
 
@@ -100,7 +103,7 @@ int PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 
 	if (bError)
 	{
-		printf("Sorry.\n");
+		printf("Cannot patch.\n");
 		return -1;
 	}
 	else
@@ -110,7 +113,7 @@ int PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 		 */
 
 		header.reserved2 |= 0x04;	// set autostart bit
-		
+
 		bool forcepatch[512];
 		memset(forcepatch, 0, sizeof(forcepatch));
 
@@ -122,7 +125,7 @@ int PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 	
 		header.header_crc = CalcCRC((unsigned char *)&header, 0x15E);
 	
-		fputs(
+		if (fVHD) fputs(
 			#include "passme_vhd1.h"
 			, fVHD
 		);
@@ -131,34 +134,40 @@ int PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 		{
 			if (((unsigned char *)&header)[i] != old_header[i])
 			{
-				fprintf(fVHD, "\t\t\twhen 16#%03X# => patched_data <= X\"%02X\";\n", i, ((unsigned char *)&header)[i]);
+				printf("Patch:\t0x%03X\t0x%02X\n", i, ((unsigned char *)&header)[i]);
+				if (fVHD) fprintf(fVHD, "\t\t\twhen 16#%03X# => patched_data <= X\"%02X\";\n", i, ((unsigned char *)&header)[i]);
 			}
 		}
 
-		fputs(
+		if (fVHD) fputs(
 			#include "passme_vhd2.h"
 			, fVHD
 		);
 		
-		fclose(fVHD);
+		if (fVHD) fclose(fVHD);
 		
 		/*
 		 * SRAM
 		 */
 
+		printf("ARM9 patched entry address: \t0x%08X\n", (unsigned int)header.arm9_entry_address);
+
 		FILE *fSRAM = fopen(sramfilename, "wb");
-		if (!fSRAM) { fprintf(stderr, "Cannot open file '%s'.\n", sramfilename); exit(1); }
-		for (int i=0; i<passme_sram_size; i++)
+		if (sramfilename && !fSRAM) { fprintf(stderr, "Cannot open file '%s'.\n", sramfilename); exit(1); }
+		if (fSRAM)
 		{
-			unsigned char c = passme_sram[i];
-			// patch with address of ARM9 loop so it can be redirected by the code in SRAM.
-			if ((i &~ 1) == 0x764) c = header.arm9_entry_address >> 0 & 0xFF;
-			if ((i &~ 1) == 0x796) c = header.arm9_entry_address >> 8 & 0xFF;
-			if ((i &~ 1) == 0x7C8) c = header.arm9_entry_address >> 16 & 0xFF;
-			if ((i &~ 1) == 0x7FA) c = header.arm9_entry_address >> 24 & 0xFF;
-			fputc(c, fSRAM);
+			for (int i=0; i<passme_sram_size; i++)
+			{
+				unsigned char c = passme_sram[i];
+				// patch with address of ARM9 loop so it can be redirected by the code in SRAM.
+				if ((i &~ 1) == 0x764) c = header.arm9_entry_address >> 0 & 0xFF;
+				if ((i &~ 1) == 0x796) c = header.arm9_entry_address >> 8 & 0xFF;
+				if ((i &~ 1) == 0x7C8) c = header.arm9_entry_address >> 16 & 0xFF;
+				if ((i &~ 1) == 0x7FA) c = header.arm9_entry_address >> 24 & 0xFF;
+				fputc(c, fSRAM);
+			}
+			fclose(fSRAM);
 		}
-		fclose(fSRAM);
 	}
 
 	fclose(fNDS);
