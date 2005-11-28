@@ -14,7 +14,7 @@
 /*
  * Variables
  */
-bool verbose = false;
+int verbose = 0;
 Header header;
 FILE *fNDS = 0;
 char *romlistfilename = 0;
@@ -34,6 +34,9 @@ char *uniquefilename = 0;
 char *logofilename = 0;
 char *makercode = 0;
 char *gamecode = 0;
+char *vhdfilename = 0;
+char *sramfilename = 0;
+
 
 int bannertype;
 unsigned int arm9RamAddress = 0;
@@ -65,42 +68,65 @@ void Help(char *unknownoption = 0)
 	printf("\n");
 	printf("Parameter              Syntax                         Comments\n");
 	printf("---------              ------                         --------\n");
-	printf("Show information:      -i file.nds\n");
-	printf("Show more information: -v -i file.nds [roms_rc.dat]   checksums and warnings\n");
-	printf("PassMe:                -p file.nds [passme.vhd] [passme.sav]\n");
-	printf("Fix header CRC         -f file.nds\n");
-	if (EncryptSecureArea)
-	printf("En/decrypt secure area -s file.nds\n");
-	//printf("Sign multiboot         -n file.nds");
-	//printf("Hash file & compare:   -@ arm7.bin\n");		// used in buildscript
-	printf("List files:            -l file.nds\n");
-	printf("Create                 -c file.nds\n");
-	printf("Extract                -x file.nds [filemask]...\n");
-	printf("Create/Extract options:\n");
-	printf("  verbose              -v                             optional\n");
-	printf("\n");
+	printf("Show this help:        -?\n");
+	printf("Show information:      -i [file.nds]\n");
+	printf("Information options:                                  optional\n");
+	printf("  Show more info       -v [roms_rc.dat]               checksums, warnings, release info\n");
+	printf("PassMe:                -p [file.nds] [passme.vhd] [passme.sav]\n");
+	printf("Fix header CRC         -f [file.nds]\n");
+	//printf("Test                   -T [file.nds]\n");
+	if (EncryptSecureArea) printf("En/decrypt secure area -s file.nds\n");
+	//printf("Sign multiboot         -n [file.nds]");
+	//printf("Hash file & compare:   -@ [arm7.bin]\n");		// used in buildscript
+	printf("List files:            -l [file.nds]\n");
+	printf("Create                 -c [file.nds]\n");
+	printf("Extract                -x [file.nds]\n");
+	printf("Create/Extract options:                               optional\n");
+	printf("  Show more info       -v[v...]                       filenames etc.\n");
+	//printf("\n");
 	printf("  ARM9 executable      -9 file.bin\n");
-	printf("  ARM7 executable      -7 file.bin                    optional\n");
-	printf("  ARM9 overlay table   -y9 file.bin                   optional\n");
-	printf("  ARM7 overlay table   -y7 file.bin                   optional\n");
-	printf("  data files           -d directory                   optional\n");
-	printf("  overlay files        -y directory                   optional\n");
-	printf("  banner bitmap/text   -b file.bmp \"text;text;text\"   optional, 3 lines max.\n");
-	printf("  banner binary        -t file.bin                    optional\n");
+	printf("  ARM7 executable      -7 file.bin\n");
+	printf("  ARM9 overlay table   -y9 file.bin\n");
+	printf("  ARM7 overlay table   -y7 file.bin\n");
+	printf("  data files           -d directory\n");
+	printf("  overlay files        -y directory\n");
+	printf("  banner bitmap/text   -b file.bmp \"text;text;text\"   3 lines max.\n");
+	printf("  banner binary        -t file.bin\n");
+	//printf("\n");
+	printf("  header template      -h file.bin\n");
+	printf("  logo bitmap/binary   -o file.bmp/file.bin\n");
+	printf("  maker code           -m code\n");
+	printf("  game code            -g code\n");
+	//printf("  unique ID filename  -u file.bin                    for homebrew, auto generated\n");
+	printf("  ARM9 RAM address     -r9 address\n");
+	printf("  ARM7 RAM address     -r7 address\n");
+	printf("  ARM9 RAM entry       -e9 address\n");
+	printf("  ARM7 RAM entry       -e7 address\n");
+	printf("  Wildcard filemask(s) -w [filemask]...                * and ? are special\n");
+	printf("Common options:\n");
+	printf("  NDS filename         [file.nds]\n");
 	printf("\n");
-	printf("  header template      -h file.bin                    optional\n");
-	printf("  logo bitmap/binary   -o file.bmp/file.bin           optional\n");
-	printf("  maker code           -m code                        optional\n");
-	printf("  game code            -g code                        optional\n");
-	//printf("  unique ID filename  -u file.bin                    optional, for homebrew, auto generated\n");
-	printf("  ARM9 RAM address     -r9 address                    optional, 0x prefix for hex\n");
-	printf("  ARM7 RAM address     -r7 address                    optional, 0x prefix for hex\n");
-	printf("  ARM9 RAM entry       -e9 address                    optional, 0x prefix for hex\n");
-	printf("  ARM7 RAM entry       -e7 address                    optional, 0x prefix for hex\n");
+	printf("You can perform multiple actions. They are performed in specified order.\n");
+	printf("You only need to specify the NDS filename once. This and other options can appear anywhere.\n");
+	printf("Addresses can be prefixed with '0x' to use hexadecimal format.\n");
 }
 
-#define REQUIRED()		((argc > a+1) ? argv[++a] : 0)
-#define OPTIONAL()		((argc > a+1) && (argv[a+1][0] != '-') ? argv[++a] : 0)
+
+#define REQUIRED()		((argc > a+1) ? argv[++a] : 0)								// must precede OPTIONAL
+#define OPTIONAL()		((argc > a+1) && (argv[a+1][0] != '-') ? argv[++a] : 0)		// final paramter requirement checks are done when performing actions
+#define MAX_ACTIONS		32
+#define ADDACTION(a)	{ if (num_actions < MAX_ACTIONS) actions[num_actions++] = a; }
+
+enum {
+	ACTION_SHOWINFO,
+	ACTION_FIXHEADERCRC,
+	ACTION_ENCRYPTSECUREAREA,
+	ACTION_PASSME,
+	ACTION_LISTFILES,
+	ACTION_EXTRACT,
+	ACTION_CREATE,
+	ACTION_HASHFILE,
+};
 
 /*
  * main
@@ -108,16 +134,13 @@ void Help(char *unknownoption = 0)
 int main(int argc, char *argv[])
 {
 	#ifdef _NDSTOOL_P_H
-		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); exit(1); }
+		if (sizeof(Header) != 0x200) { fprintf(stderr, "Header size %d != %d\n", sizeof(Header), 0x200); return 1; }
 	#endif
 
 	if (argc < 2) { Help(); return 0; }
-
-	// what to do
-	bool extract = false;
-	bool create = false;
 	
-	int status = 0;
+	int num_actions = 0;
+	int actions[MAX_ACTIONS];
 
 	// parse parameters
 	for (int a=1; a<argc; a++)
@@ -128,16 +151,15 @@ int main(int argc, char *argv[])
 			{
 				case 'i':	// show information
 				{
-					ndsfilename = REQUIRED();
-					romlistfilename = OPTIONAL();
-					ShowInfo(ndsfilename);
+					ADDACTION(ACTION_SHOWINFO);
+					ndsfilename = OPTIONAL();
 					break;
 				}
 
 				case 'f':	// fix header CRC
 				{
-					ndsfilename = REQUIRED();
-					FixHeaderCRC(ndsfilename);
+					ADDACTION(ACTION_FIXHEADERCRC);
+					ndsfilename = OPTIONAL();
 					break;
 				}
 
@@ -145,48 +167,49 @@ int main(int argc, char *argv[])
 				{
 					if (EncryptSecureArea)
 					{
-						ndsfilename = REQUIRED();
-						EnDecryptSecureArea(ndsfilename);
+						ADDACTION(ACTION_ENCRYPTSECUREAREA);
+						ndsfilename = OPTIONAL();
+						break;
 					}
-					break;
 				}
 
 				case 'p':	// PassMe
 				{
-					ndsfilename = REQUIRED();
-					char *vhdfilename = OPTIONAL();
-					char *sramfilename = OPTIONAL();
-					status = PassMe(ndsfilename, vhdfilename, sramfilename);
+					ADDACTION(ACTION_PASSME);
+					ndsfilename = OPTIONAL();
+					vhdfilename = OPTIONAL();
+					sramfilename = OPTIONAL();
 					break;
 				}
 
 				case 'l':	// list files
 				{
-					ndsfilename = REQUIRED();
-					ExtractFiles(ndsfilename);
+					ADDACTION(ACTION_LISTFILES);
+					ndsfilename = OPTIONAL();
 					break;
 				}
 
-				///
-
 				case 'x':	// extract
 				{
-					extract = true;
-					ndsfilename = REQUIRED();
+					ADDACTION(ACTION_EXTRACT);
+					ndsfilename = OPTIONAL();
+					break;
+				}
+				
+				case 'w':	// wildcard filemasks
+				{
 					while (1)
 					{
 						if (!(filemasks[filemask_num] = OPTIONAL())) break;
 						if (++filemask_num >= MAX_FILEMASKS) return 1;
 					}
-					if (!ndsfilename) return 1;
 					break;
 				}
 
 				case 'c':	// create
 				{
-					create = true;
-					ndsfilename = REQUIRED();
-					if (!ndsfilename) return 1;
+					ADDACTION(ACTION_CREATE);
+					ndsfilename = OPTIONAL();
 					break;
 				}
 
@@ -198,16 +221,8 @@ int main(int argc, char *argv[])
 				// hash file
 				case '@':
 				{
-					unsigned char sha1[SHA1_DIGEST_SIZE];
-					char *filename = REQUIRED();
-					int r = HashAndCompareWithList(filename, sha1);
-					status = -1;
-					if (r > 0)
-					{
-						for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", sha1[i]);
-						printf("\n");
-						status = 0;
-					}
+					ADDACTION(ACTION_HASHFILE);
+					ndsfilename = OPTIONAL();
 					break;
 				}
 
@@ -235,7 +250,8 @@ int main(int argc, char *argv[])
 					break;
 
 				case 'v':	// verbose
-					verbose = true;
+					for (char *p=argv[a]; *p; p++) if (*p == 'v') verbose++;
+					romlistfilename = OPTIONAL();
 					break;
 
 				case 'r':	// RAM address
@@ -261,7 +277,7 @@ int main(int argc, char *argv[])
 					if (strlen(makercode) != 2)
 					{
 						fprintf(stderr, "Maker code must be 2 characters!\n");
-						exit(1);
+						return 1;
 					}
 					break;
 
@@ -269,7 +285,7 @@ int main(int argc, char *argv[])
 					gamecode = REQUIRED();
 					if (strlen(gamecode) != 4) {
 						fprintf(stderr, "Game code must be 4 characters!\n");
-						exit(1);
+						return 1;
 					}
 					for (int i=0; i<4; i++) if ((gamecode[a] >= 'a') && (gamecode[a] <= 'z'))
 					{
@@ -292,6 +308,12 @@ int main(int argc, char *argv[])
 						default: Help(argv[a]); return 1;
 					}
 					break;
+				
+				case '?':	// help
+				{
+					Help();
+					return 0;	// do not perform any other actions
+				}
 
 				default:
 				{
@@ -302,32 +324,82 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			Help();
-			return 0;
+			//Help();
+			if (ndsfilename)
+			{
+				fprintf(stderr, "NDS filename is already given!\n");
+				return 1;
+			}
+			ndsfilename = argv[a];
+			break;
 		}
 	}
 
 	Title();
 
-	if (extract && create)
+	// perform actions
+	int status = 0;
+	for (int i=0; i<num_actions; i++)
 	{
-		fprintf(stderr, "Cannot both extract and create!\n");
-		return 1;
-	}
-	else if (extract)
-	{
-		if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C, true);
-		if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
-		if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
-		if (headerfilename) Extract(headerfilename, false, 0x0, false, 0x200);
-		if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
-		if (arm7ovltablefilename) Extract(arm7ovltablefilename, true, 0x58, true, 0x5C);
-		if (overlaydir) ExtractOverlayFiles();
-		if (filerootdir) ExtractFiles(ndsfilename);
-	}
-	else if (create)
-	{
-		Create();
+		switch (actions[i])
+		{
+			case ACTION_SHOWINFO:
+				if (!ndsfilename) return 1;
+				ShowInfo(ndsfilename);
+				break;
+
+			case ACTION_FIXHEADERCRC:
+				if (!ndsfilename) return 1;
+				FixHeaderCRC(ndsfilename);
+				break;
+
+			case ACTION_EXTRACT:
+				if (!ndsfilename) return 1;
+				if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C, true);
+				if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
+				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
+				if (headerfilename) Extract(headerfilename, false, 0x0, false, 0x200);
+				if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
+				if (arm7ovltablefilename) Extract(arm7ovltablefilename, true, 0x58, true, 0x5C);
+				if (overlaydir) ExtractOverlayFiles();
+				if (filerootdir) ExtractFiles(ndsfilename);
+				break;
+
+			case ACTION_CREATE:
+				if (!ndsfilename) return 1;
+				/*status =*/ Create();
+				break;
+
+			case ACTION_PASSME:
+				if (!ndsfilename) return 1;
+				status = PassMe(ndsfilename, vhdfilename, sramfilename);
+				break;
+
+			case ACTION_LISTFILES:
+				if (!ndsfilename) return 1;
+				/*status =*/ ExtractFiles(ndsfilename);
+				break;
+
+			case ACTION_HASHFILE:
+			{
+				if (!ndsfilename) return 1;
+				unsigned char sha1[SHA1_DIGEST_SIZE];
+				int r = HashAndCompareWithList(ndsfilename, sha1);
+				status = -1;
+				if (r > 0)
+				{
+					for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", sha1[i]);
+					printf("\n");
+					status = 0;
+				}
+				break;
+			}
+
+			case ACTION_ENCRYPTSECUREAREA:
+				if (!ndsfilename) return 1;
+				/*status =*/ EnDecryptSecureArea(ndsfilename);
+				break;
+		}
 	}
 
 	return (status < 0) ? 1 : 0;

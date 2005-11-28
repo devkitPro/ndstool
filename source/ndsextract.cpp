@@ -71,6 +71,39 @@ void ExtractFile(char *rootdir, char *prefix, char *entry_name, unsigned int fil
 }
 
 /*
+ * MatchName
+ */
+bool MatchName(char *name, char *mask, int level=0)
+{
+	char *a = name;
+	char *b = mask;
+	//for (int i=0; i<level; i++) printf("  "); printf("matching a='%s' b='%s'\n", a, b);
+	while (1)
+	{
+		//for (int i=0; i<level; i++) printf("a=%s b=%s\n", a, b);
+		if (*b == '*')
+		{
+			while (*b == '*') b++;
+	//for (int i=0; i<level; i++) printf("  "); printf("* '%s' '%s'\n", a, b);
+			bool match = false;
+			char *a2 = a;
+			do
+			{
+				if (MatchName(a2, b, level+1)) { a = a2; match = true; break; }
+			} while (*a2++);
+			if (!match) return false;
+			//for (int i=0; i<level; i++) printf("  "); printf("matched a='%s' b='%s'\n", a, b);
+		}
+		//for (int i=0; i<level; i++) printf("  "); printf("a=%s b=%s\n", a, b);
+		if (!*a && !*b) return true;
+		if (*a && !*b) return false;
+		if (!*a && *b) return false;
+		if (*b != '?' && *a != *b) return false;
+		a++; b++;
+	}
+}
+
+/*
  * ExtractDirectory
  * filerootdir can be 0 for just listing files
  */
@@ -127,7 +160,23 @@ void ExtractDirectory(char *prefix, unsigned int dir_id)
 		}
 		else
 		{
-			ExtractFile(filerootdir, prefix, entry_name, file_id);
+			if (1)
+			{
+				bool match = (filemask_num == 0);
+				for (int i=0; i<filemask_num; i++)
+				{
+					//printf("%s %s\n", entry_name, filemasks[i]);
+					if (MatchName(entry_name, filemasks[i])) { match = true; break; }
+				}
+
+				//if (!directorycreated)
+				//{
+				//}
+				
+				//printf("%d\n", match);
+
+				if (match) ExtractFile(filerootdir, prefix, entry_name, file_id);
+			}
 		}
 	}
 
@@ -139,6 +188,7 @@ void ExtractDirectory(char *prefix, unsigned int dir_id)
  */
 void ExtractFiles(char *ndsfilename)
 {
+//printf("%d\n", MatchName("hello", "h*el*lo")); exit(0);		// TEST
 	fNDS = fopen(ndsfilename, "rb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 	fread(&header, 512, 1, fNDS);

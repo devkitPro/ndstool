@@ -1,6 +1,7 @@
 #include "ndstool.h"
 #include "raster.h"
 #include "banner.h"
+#include "crc.h"
 
 char *bannerLanguages[] = { "Japanese", "English", "French", "German", "Italian", "Spanish" };
 
@@ -22,7 +23,7 @@ inline unsigned short RGBQuadToRGB16(RGBQUAD quad)
  */
 unsigned short CalcBannerCRC(Banner &banner)
 {
-	return CalcCRC((unsigned char *)&banner + 32, 0x840 - 32);
+	return CalcCrc16((unsigned char *)&banner + 32, 0x840 - 32);
 }
 
 /*

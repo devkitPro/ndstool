@@ -22,7 +22,7 @@ DEBUGFLAGS	:= -s
 
 UNAME := $(shell uname -s)
 
-CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3 
+CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3
 CFLAGS	+=	$(INCLUDE)
 
 

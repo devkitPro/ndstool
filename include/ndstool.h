@@ -31,7 +31,7 @@ extern unsigned int free_file_id;
 extern unsigned int _entry_start;
 extern unsigned int file_top;
 
-extern bool verbose;
+extern int verbose;
 extern Header header;
 extern FILE *fNDS;
 extern char *romlistfilename;

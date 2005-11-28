@@ -2,7 +2,7 @@
  * Includes
  */
 #include "ndstool.h"
-#include "crc16.h"
+#include "crc.h"
 #include "passme_sram.h"
 
 /*
@@ -123,7 +123,7 @@ int PassMe(char *ndsfilename, char *vhdfilename, char *sramfilename)
 		((unsigned char *)&header)[0x6] = 0x9F;
 		((unsigned char *)&header)[0x7] = 0xE5;
 	
-		header.header_crc = CalcCRC((unsigned char *)&header, 0x15E);
+		header.header_crc = CalcCrc16((unsigned char *)&header, 0x15E);
 	
 		if (fVHD) fputs(
 			#include "passme_vhd1.h"
