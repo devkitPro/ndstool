@@ -8,6 +8,20 @@
 	#define NOSWAP
 #endif
 
+//template <typename T> struct Blah32
+//{
+//	unsigned T i;
+//	#ifdef NOSWAP
+//		operator T () { return i; }
+//		T & operator = (T i) { return this->i = i; }
+//	#else
+//		operator T () { return i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
+//		T & operator = (T i) { return this->i = i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
+//	#endif
+//	Blah() {}
+//	Blah(T i) { *this = i; }
+//};
+
 struct unsigned_int
 {
 	unsigned int i;
@@ -20,6 +34,20 @@ struct unsigned_int
 	#endif
 	unsigned_int() {}
 	unsigned_int(unsigned int i) { *this = i; }
+};
+
+struct unsigned_long
+{
+	unsigned long i;
+	#ifdef NOSWAP
+		operator unsigned long () { return i; }
+		unsigned long & operator = (unsigned long i) { return this->i = i; }
+	#else
+		operator unsigned long () { return i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
+		unsigned long & operator = (unsigned long i) { return this->i = i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
+	#endif
+	unsigned_long() {}
+	unsigned_long(unsigned long i) { *this = i; }
 };
 
 struct unsigned_short
@@ -48,6 +76,20 @@ struct signed_int
 	#endif
 	signed_int() {}
 	signed_int(signed int i) { *this = i; }
+};
+
+struct signed_long
+{
+	unsigned long i;
+	#ifdef NOSWAP
+		operator signed long () { return i; }
+		signed long & operator = (signed long i) { return (signed long &)this->i = i; }
+	#else
+		operator signed long () { return i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
+		signed long & operator = (signed long i) { return (signed long &)this->i = i<<24 | i<<8&0xFF0000 | i>>8&0xFF00 | i>>24; }
+	#endif
+	signed_long() {}
+	signed_long(signed long i) { *this = i; }
 };
 
 struct signed_short
