@@ -62,6 +62,7 @@ void Hook(char *ndsfilename, char *arm7filename)
 	header.offset_0x78 = header_backup_offset;		// ROM offset of header backup
 	header.offset_0x7C = header.arm7_ram_address + header.arm7_size + add_arm7_size;		// RAM location of header backup
 	header.arm7_entry_address = header.arm7_entry_address + header.arm7_size;
+	header.arm9_entry_address = header.arm7_entry_address;
 	header.arm7_rom_offset = new_arm7_offset;
 	header.arm7_size = header.arm7_size + add_arm7_size + 0x200;		// also load our code and the original header into memory
 	header.application_end_offset = new_application_end_offset;
