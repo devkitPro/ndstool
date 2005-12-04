@@ -9,15 +9,16 @@
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 TARGET		:=	ndstool
-BUILD		:=	build
+BUILD			:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
-DATA		:=	data
+DATA			:=	data
 
+export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-DEBUGFLAGS	:= -s
+DEBUGFLAGS	:=
 
 
 UNAME := $(shell uname -s)
@@ -26,11 +27,11 @@ CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3
 CFLAGS	+=	$(INCLUDE)
 
 
-LDFLAGS	=	$(DEBUGFLAGS)
+LDFLAGS	=	$(DEBUGFLAGS) -Wl,--strip-debug
 
 ifneq (,$(findstring MINGW,$(UNAME)))
-	PLATFORM		:= win32
-	EXEEXT			:= .exe
+	PLATFORM	:= win32
+	EXEEXT		:= .exe
 	CFLAGS		+= -mno-cygwin
 	LDFLAGS		+= -mno-cygwin
 endif
@@ -69,22 +70,22 @@ export OUTPUTDIR:=	$(CURDIR)
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-					$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
-					$(CURDIR)/DefaultArm7 $(CURDIR)/Loader
+			$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
+			$(CURDIR)/DefaultArm7 $(CURDIR)/Loader
 
-export CC		:=	$(PREFIX)gcc
-export CXX		:=	$(PREFIX)g++
-export AR		:=	$(PREFIX)ar
+export CC	:=	$(PREFIX)gcc
+export CXX	:=	$(PREFIX)g++
+export AR	:=	$(PREFIX)ar
 export OBJCOPY	:=	$(PREFIX)objcopy
 
 #---------------------------------------------------------------------------------
 # automatically build a list of object files for our project
 #---------------------------------------------------------------------------------
-CFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES			:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES		:=	default_arm7.bin loadme.bin $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
-BMPFILES		:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bmp)))
+CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+BINFILES	:=	default_arm7.bin loadme.bin $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
+BMPFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bmp)))
 
 export OFILES	:= $(BINFILES:.bin=.o) $(BMPFILES:.bmp=.o)  $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
 #---------------------------------------------------------------------------------
@@ -102,8 +103,8 @@ endif
 #---------------------------------------------------------------------------------
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-					-I$(CURDIR)/$(BUILD)
+			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+			-I$(CURDIR)/$(BUILD)
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
@@ -111,12 +112,13 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 #---------------------------------------------------------------------------------
 $(BUILD):
+	@echo $(PATH)
 	@[ -d $@ ] || mkdir -p $@
 	@make PassMeIncludes
 	@make -C DefaultArm7
 	@make -C Loader
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-	@ndstool -@ DefaultArm7/default_arm7.bin && echo For official devkitPro releases, add this SHA1 hash of default ARM7 binary to data/arm7_sha1_homebrew.bin and recompile. || echo -n
+	@./ndstool -@ DefaultArm7/default_arm7.bin && echo For official devkitPro releases, add this SHA1 hash of default ARM7 binary to data/arm7_sha1_homebrew.bin and recompile. || echo -n
 
 #---------------------------------------------------------------------------------
 .PHONY: PassMeIncludes
