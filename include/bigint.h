@@ -1,6 +1,6 @@
 struct BigInt
 {
-	unsigned char data[129*2];
+	unsigned char data[129*2];	// 128*2 doesn't seem to be enough for 1024 bit keys
 
 	int Sub(BigInt &a, BigInt &b, int b_shift);
 	void MulMod(BigInt &a, BigInt &b, BigInt &m);
