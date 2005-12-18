@@ -27,23 +27,29 @@ CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3
 CFLAGS	+=	$(INCLUDE)
 
 
-LDFLAGS	=	$(DEBUGFLAGS) -Wl,--strip-debug
+LDFLAGS	=	$(DEBUGFLAGS)
+
+ifneq (,$(findstring Darwin,$(UNAME)))
+        LDFLAGS         +=
+endif
+
+
 
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM	:= win32
 	EXEEXT		:= .exe
 	CFLAGS		+= -mno-cygwin
-	LDFLAGS		+= -mno-cygwin
+	LDFLAGS		+= -mno-cygwin -Wl,--strip-debug
 endif
 
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	CFLAGS		+= -mno-cygwin
-	LDFLAGS		+= -mno-cygwin
+	LDFLAGS		+= -mno-cygwin -Wl,--strip-debug
 	EXEEXT		:= .exe
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
-	LDFLAGS 	+= -static
+	LDFLAGS 	+= -static -Wl,--strip-debug
 endif
 
 CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
