@@ -3,14 +3,15 @@
 	by Rafael Vuijk (aka DarkFader)
 */
 
-#include <ndstool.h>
-#include <ndstool_version.h>
 #include <unistd.h>
+#include "ndstool.h"
+#include "ndstool_version.h"
 #include "sha1.h"
 #include "ndscreate.h"
 #include "ndsextract.h"
 #include "passme.h"
 #include "hook.h"
+#include "encryption.h"
 
 /*
  * Variables
@@ -30,14 +31,17 @@ char *arm7ovltablefilename = 0;
 char *arm9ovltablefilename = 0;
 char *bannerfilename = 0;
 char *bannertext = 0;
+//bool compatibility = false;
 char *headerfilename = 0;
-char *uniquefilename = 0;
+//char *uniquefilename = 0;
 char *logofilename = 0;
 char *makercode = 0;
 char *gamecode = 0;
 char *vhdfilename = 0;
 char *sramfilename = 0;
-
+int latency1 = 0x1FFF;	//0x8F8;
+int latency2 = 0x3F;	//0x18;
+int romversion = 0;
 
 int bannertype;
 unsigned int arm9RamAddress = 0;
@@ -45,77 +49,114 @@ unsigned int arm7RamAddress = 0;
 unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
 
+const char CompileDate[] = __DATE__;
+const char CompileTime[] = __TIME__;
+
 /*
  * Title
  */
 void Title()
 {
 	printf("Nintendo DS rom tool "VER" - %s %s by Rafael Vuijk (aka DarkFader)\n",CompileDate,CompileTime);
-	if (EncryptSecureArea) printf("WARNING: This is a private version!\n");
 }
+
+/*
+ * Help data
+ */
+struct HelpLine
+{
+	char *line;
+	char option_char;
+	char *context;
+};
+
+HelpLine helplines[] =
+{
+	{"Parameter              Syntax                         Comments\n"},
+	{"---------              ------                         --------\n"},
+	{"Show this help:        -?[option]                     global or specific help\n"},
+	{"Show information:      -i [file.nds]\n", 'i', "Header information. Use in conjuction with -v to show even more information such as CRC32 of the file and even look it up in the specified dat-file for ROM release information.\n"},
+	{"Information options:                                  optional\n"},
+	{"  Show more info       -v [roms_rc.dat]               checksums, warnings, release info\n"},
+	{"PassMe:                -p [file.nds] [passme.vhd] [passme.sav]\n", 'p', "\n"},
+	{"Hook ARM7 executable   -k [file.nds]                  see manual\n", 'k', "ask me for example\n"},
+	{"Fix header CRC         -f [file.nds]\n", 'f', "Some commands do this automatically.\n"},
+	//"Test                   -T [file.nds]\n"},
+	{"En/decrypt secure area -s[e|d] [file.nds]             also adds testing data\n", 's', "En/decrypt the secure area and put encryption/test data. This data is used for the card command encryption. It will automatically detect the current state. Optionally add 'e' or 'd' to specify en/decryption.\n"},
+	//"Hash file & compare:   -@ [arm7.bin]\n"},		// used in buildscript
+	{"List files:            -l [file.nds]\n", 'l', "Gives a list of files in de NDS file. Use -v option to show more information such as offset and length.\n"},
+	{"Create                 -c [file.nds]\n"},
+	{"Extract                -x [file.nds]\n"},
+	{"Create/Extract options:                               optional\n"},
+	{"  Show more info       -v[v...]                       filenames etc.\n", 'v', "Use multiple v's for more information.\n"},
+	//"\n"},
+	{"  ARM9 executable      -9 file.bin\n"},
+	{"  ARM7 executable      -7 file.bin\n"},
+	{"  ARM9 overlay table   -y9 file.bin\n"},
+	{"  ARM7 overlay table   -y7 file.bin\n"},
+	{"  Data files           -d directory\n"},
+	{"  Overlay files        -y directory\n"},
+	{"  Banner bitmap/text   -b file.bmp \"text;text;text\"   3 lines max.\n", 'b', "The three lines are showed in the firmware. Seperate with a semicolon.\n"},
+	{"  Banner binary        -t file.bin\n"},
+	//"\n"},
+	{"  Header template      -h file.bin\n", 'h', "You can copy the header from another ROM and use it as a basis.\n"},
+	//{"  N-compatibility      -n [L1] [L2] [ver]             uses offset 0x4000", 'n', "Automatically. Use this to create a more 'valid' ROM file. Not required for homebrew.\n"},
+	{"  Latency              -n [L1] [L2] [ver]             default=maximum", 'n'},
+	{"  Logo bitmap/binary   -o file.bmp/file.bin\n"},
+	{"  Maker code           -m code\n"},
+	{"  Game code            -g code\n"},
+	//"  unique ID filename  -u file.bin                    for homebrew, auto generated\n"},
+	{"  ARM9 RAM address     -r9 address\n"},
+	{"  ARM7 RAM address     -r7 address\n"},
+	{"  ARM9 RAM entry       -e9 address\n"},
+	{"  ARM7 RAM entry       -e7 address\n"},
+	{"  Wildcard filemask(s) -w [filemask]...               * and ? are special\n"},
+	{"Common options:\n"},
+	{"  NDS filename         [file.nds]\n"},
+	{"\n"},
+	{"You can perform multiple actions. They are performed in specified order.\n"},
+	{"You only need to specify the NDS filename once. This and other options can appear anywhere.\n"},
+	{"Addresses can be prefixed with '0x' to use hexadecimal format.\n"},
+};
 
 /*
  * Help
  */
-void Help(char *unknownoption = 0)
+void Help(char *specificoption = 0)
 {
 	Title();
+	printf("\n");
 
-	if (unknownoption)
+	if (specificoption)
 	{
-		printf("Unknown option: %s\n\n", unknownoption);
+		HelpLine *hl = 0;
+		for (unsigned int i=0; i<(sizeof(helplines) / sizeof(helplines[0])); i++)
+		{
+			if (helplines[i].option_char == *specificoption) { hl = helplines + i; break; }
+		}
+		if (hl)
+		{
+			puts(hl->line);
+			puts(hl->context);
+		}
+		else
+		{
+			printf("Unknown option: %s\n\n", specificoption);
+		}
 	}
-
-	printf("\n");
-	printf("Parameter              Syntax                         Comments\n");
-	printf("---------              ------                         --------\n");
-	printf("Show this help:        -?\n");
-	printf("Show information:      -i [file.nds]\n");
-	printf("Information options:                                  optional\n");
-	printf("  Show more info       -v [roms_rc.dat]               checksums, warnings, release info\n");
-	printf("PassMe:                -p [file.nds] [passme.vhd] [passme.sav]\n");
-	printf("Hook ARM7 executable   -k [file.nds]                  see manual\n");
-	printf("Fix header CRC         -f [file.nds]\n");
-	//printf("Test                   -T [file.nds]\n");
-	if (EncryptSecureArea) printf("En/decrypt secure area -s [file.nds]\n");
-	//printf("Sign multiboot         -n [file.nds]");
-	//printf("Hash file & compare:   -@ [arm7.bin]\n");		// used in buildscript
-	printf("List files:            -l [file.nds]\n");
-	printf("Create                 -c [file.nds]\n");
-	printf("Extract                -x [file.nds]\n");
-	printf("Create/Extract options:                               optional\n");
-	printf("  Show more info       -v[v...]                       filenames etc.\n");
-	//printf("\n");
-	printf("  ARM9 executable      -9 file.bin\n");
-	printf("  ARM7 executable      -7 file.bin\n");
-	printf("  ARM9 overlay table   -y9 file.bin\n");
-	printf("  ARM7 overlay table   -y7 file.bin\n");
-	printf("  Data files           -d directory\n");
-	printf("  Overlay files        -y directory\n");
-	printf("  Banner bitmap/text   -b file.bmp \"text;text;text\"   3 lines max.\n");
-	printf("  Banner binary        -t file.bin\n");
-	//printf("\n");
-	printf("  Header template      -h file.bin\n");
-	printf("  Logo bitmap/binary   -o file.bmp/file.bin\n");
-	printf("  Maker code           -m code\n");
-	printf("  Game code            -g code\n");
-	//printf("  unique ID filename  -u file.bin                    for homebrew, auto generated\n");
-	printf("  ARM9 RAM address     -r9 address\n");
-	printf("  ARM7 RAM address     -r7 address\n");
-	printf("  ARM9 RAM entry       -e9 address\n");
-	printf("  ARM7 RAM entry       -e7 address\n");
-	printf("  Wildcard filemask(s) -w [filemask]...                * and ? are special\n");
-	printf("Common options:\n");
-	printf("  NDS filename         [file.nds]\n");
-	printf("\n");
-	printf("You can perform multiple actions. They are performed in specified order.\n");
-	printf("You only need to specify the NDS filename once. This and other options can appear anywhere.\n");
-	printf("Addresses can be prefixed with '0x' to use hexadecimal format.\n");
+	else
+	{
+		for (unsigned int i=0; i<(sizeof(helplines) / sizeof(helplines[0])); i++)
+		{
+			printf(helplines[i].line);
+		}
+	}
 }
 
 
 #define REQUIRED(var)	var = ((argc > a+1) ? argv[++a] : 0)								// must precede OPTIONAL
 #define OPTIONAL(var)	{ /*fprintf(stderr, "'%s'\n", argv[a]);*/ char *t = ((argc > a+1) && (argv[a+1][0] != '-') ? argv[++a] : 0); if (!var) var = t; else if (t) fprintf(stderr, "%s is already specified!\n", #var); }		// final paramter requirement checks are done when performing actions
+#define OPTIONAL_INT(var)	{ char *t = ((argc > a+1) && (argv[a+1][0] != '-') ? argv[++a] : 0); if (t) var = strtoul(t,0,0); }		// like OPTIONAL, but for (positive) integers
 #define MAX_ACTIONS		32
 #define ADDACTION(a)	{ if (num_actions < MAX_ACTIONS) actions[num_actions++] = a; }
 
@@ -168,12 +209,9 @@ int main(int argc, char *argv[])
 
 				case 's':	// en-/decrypt secure area
 				{
-					if (EncryptSecureArea)
-					{
-						ADDACTION(ACTION_ENCRYPTSECUREAREA);
-						OPTIONAL(ndsfilename);
-						break;
-					}
+					ADDACTION(ACTION_ENCRYPTSECUREAREA);
+					OPTIONAL(ndsfilename);
+					break;
 				}
 
 				case 'p':	// PassMe
@@ -262,13 +300,20 @@ int main(int argc, char *argv[])
 					REQUIRED(headerfilename);
 					break;
 
-				case 'u':	// unique ID file
+				/*case 'u':	// unique ID file
 					REQUIRED(uniquefilename);
-					break;
+					break;*/
 
 				case 'v':	// verbose
 					for (char *p=argv[a]; *p; p++) if (*p == 'v') verbose++;
 					OPTIONAL(romlistfilename);
+					break;
+
+				case 'n':	// latency
+					//compatibility = true;
+					OPTIONAL_INT(latency1);
+					OPTIONAL_INT(latency2);
+					OPTIONAL_INT(romversion);
 					break;
 
 				case 'r':	// RAM address
@@ -326,9 +371,9 @@ int main(int argc, char *argv[])
 					}
 					break;
 				
-				case '?':	// help
+				case '?':	// global or specific help
 				{
-					Help();
+					Help(argv[a][2] ? argv[a]+2 : 0);	// 0=global help
 					return 0;	// do not perform any other actions
 				}
 
@@ -358,6 +403,7 @@ int main(int argc, char *argv[])
 	int status = 0;
 	for (int i=0; i<num_actions; i++)
 	{
+//printf("action %d\n", actions[i]);
 		switch (actions[i])
 		{
 			case ACTION_SHOWINFO:
@@ -380,6 +426,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case ACTION_CREATE:
+				//if (+ 0x800) compatibility = true;
 				/*status =*/ Create();
 				break;
 
@@ -388,6 +435,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case ACTION_LISTFILES:
+				filerootdir = 0;
 				/*status =*/ ExtractFiles(ndsfilename);
 				break;
 

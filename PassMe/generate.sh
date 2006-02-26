@@ -15,7 +15,11 @@ PASSME_OUTPUT_DIR=$NDS_MAIN_DIR/passme
 
 NDSTOOL=C:/work/DS/buildscripts/tools/nds/ndstool/ndstool
 
+#rm "$ROMLIST"
+
 if [[ ! -f "$ROMLIST" ]]; then
+	echo "downloading romlist..."
+
 	# retrieve latest numbered DAT file
 	DATZIPFILE=`curl -s --url "http://releases.pocketheaven.com/" | gawk '{ if (match($0, "PocketHeaven_NDS-Numbered_Release_List_Roms.*RC..zip")) print substr(\$0, RSTART, RLENGTH); }'`
 	DATZIPURL="http://releases.pocketheaven.com/dats/$DATZIPFILE"
@@ -35,16 +39,26 @@ if [[ ! -f "$ROMLIST" ]]; then
 	# concatenate
 	cat "$ROMLIST1" "$ROMLIST2" > "$ROMLIST"
 	rm "$ROMLIST1" "$ROMLIST2"
+else
+	echo "Romlist already exist."
+	#read -a yn -e -p "Delete ?" -n 1 && echo $REPLY
 fi
 
 # clean files
 rm $NDS_INCOMING_DIR/*.nfo $NDS_INCOMING_DIR/*.jpg $NDS_INCOMING_DIR/*.png $NDS_INCOMING_DIR/*.diz
 
+# 
+(
+	echo "--"
+	echo "-- `date`"
+	echo "--"
+) >> generate.sql 
+
 # rename and generate PassMe files
 for NDS in $NDS_INCOMING_DIR/*.nds; do
 	echo "$NDS"
 
-	nice $NDSTOOL -v -i "$NDS" "$ROMLIST" > $TMPFILE
+	nice $NDSTOOL -v "$ROMLIST" -i "$NDS" > $TMPFILE
 	TITLE=`gawk 'BEGIN { FS="\011"; } /Release title/ { print $2 }' $TMPFILE`
 	INDEX=`gawk 'BEGIN { FS="\011"; } /Release index/ { gsub("^0*","",$2); print sprintf("%04u\n", $2); }' $TMPFILE`
 	GAMECODE=`gawk 'BEGIN { FS="\011"; } /Game code/ { print substr($3,1,4) }' $TMPFILE`

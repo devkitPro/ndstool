@@ -1,5 +1,7 @@
 #pragma pack(1)
 
+#include "types.h"
+
 #ifndef BYTE_ORDER
 	#error "BYTE_ORDER not defined"
 #endif

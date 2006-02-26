@@ -1,13 +1,15 @@
 Nintendo DS rom tool
 by Rafael Vuijk (aka DarkFader)
 
-CVS admins / additional code:
-	DarkFader <darkfader@xs4all.nl>
+Programmers and CVS admins:
+	DarkFader <darkfader@gmail.com>
 	natrium42 <natrium@gmail.com>
 	WinterMute <wntrmute@gmail.com>
 
 Update version in include/ndstool_version.h
 
+v1.29 - Nintendo ROM compatibility: now based on RAM offset + 0x800 = entrypoint, automatically adds secure area header, size padding, nintendo logo
+v1.28 - option for better Nintendo ROM compatibility
 v1.27 - ARM7 executable hooking feature
 v1.26 - wildcards for extraction, changed options handling
 v1.25 - info output fixes, dat file support

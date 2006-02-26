@@ -1,6 +1,5 @@
 #include <time.h>
 #include <ndstool.h>
-#include <ndstool_version.h>
 #include "default_arm7.h"
 #include "logo.h"
 #include "raster.h"
@@ -10,9 +9,22 @@
 #include "ndstree.h"
 
 unsigned int overlay_files = 0;
-const char CompileDate[] = __DATE__;
-const char CompileTime[] = __TIME__;
 
+unsigned char romcontrol[] = { 0x00,0x60,0x58,0x00,0xF8,0x08,0x18,0x00 };
+
+const unsigned char nintendo_logo[] =
+{
+	0x24,0xFF,0xAE,0x51,0x69,0x9A,0xA2,0x21,0x3D,0x84,0x82,0x0A,0x84,0xE4,0x09,0xAD,
+	0x11,0x24,0x8B,0x98,0xC0,0x81,0x7F,0x21,0xA3,0x52,0xBE,0x19,0x93,0x09,0xCE,0x20,
+	0x10,0x46,0x4A,0x4A,0xF8,0x27,0x31,0xEC,0x58,0xC7,0xE8,0x33,0x82,0xE3,0xCE,0xBF,
+	0x85,0xF4,0xDF,0x94,0xCE,0x4B,0x09,0xC1,0x94,0x56,0x8A,0xC0,0x13,0x72,0xA7,0xFC,
+	0x9F,0x84,0x4D,0x73,0xA3,0xCA,0x9A,0x61,0x58,0x97,0xA3,0x27,0xFC,0x03,0x98,0x76,
+	0x23,0x1D,0xC7,0x61,0x03,0x04,0xAE,0x56,0xBF,0x38,0x84,0x00,0x40,0xA7,0x0E,0xFD,
+	0xFF,0x52,0xFE,0x03,0x6F,0x95,0x30,0xF1,0x97,0xFB,0xC0,0x85,0x60,0xD6,0x80,0x25,
+	0xA9,0x63,0xBE,0x03,0x01,0x4E,0x38,0xE2,0xF9,0xA2,0x34,0xFF,0xBB,0x3E,0x03,0x44,
+	0x78,0x00,0x90,0xCB,0x88,0x11,0x3A,0x94,0x65,0xC0,0x7C,0x63,0x87,0xF0,0x3C,0xAF,
+	0xD6,0x25,0xE4,0x8B,0x38,0x0A,0xAC,0x72,0x21,0xD4,0xF8,0x07,
+};
 
 /*
  * HasElfExtension
@@ -280,6 +292,8 @@ void Create()
 	fNDS = fopen(ndsfilename, "wb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 
+	bool addSecureSyscallsDummy = false;
+
 	// initial header data
 	if (headerfilename)
 	{
@@ -289,15 +303,27 @@ void Create()
 		fread(&header, 1, 0x200, fi);
 		fclose(fi);
 	}
-	else
+	else	// set header default values for homebrew
 	{
 		// clear header
 		memset(&header, 0, 0x200);
 		memcpy(header.gamecode, "####", 4);
-		header.reserved2 = 0x04;		// autostart
-		unsigned char romcontrol[] = { 0x00,0x60,0x58,0x00,0xF8,0x08,0x18,0x00 };
-		memcpy(((unsigned char *)&header) + 0x60, romcontrol, sizeof(romcontrol));
-		*(unsigned_int *)&header = 0xEA00002E;		// for PassMe's that start @ 0x08000000
+
+		if (arm9RamAddress + 0x800 == arm9Entry)
+		{
+			addSecureSyscallsDummy = true;
+			header.rom_header_size = 0x4000;
+			memcpy(((unsigned char *)&header) + 0xC0, nintendo_logo, sizeof(nintendo_logo));
+		}
+		else
+		{
+			header.rom_header_size = 0x200;
+			header.reserved2 = 0x04;		// autostart
+			*(unsigned_int *)(((unsigned char *)&header) + 0x0) = 0xEA00002E;		// for PassMe's that start @ 0x08000000
+		}
+		*(unsigned_int *)(((unsigned char *)&header) + 0x60) = 1<<22 | latency2<<16 | 1<<14 | 1<<13;	// ROM control info 1
+		*(unsigned_int *)(((unsigned char *)&header) + 0x64) = 1<<29 | latency2<<16 | latency1;	// ROM control info 2
+		*(unsigned_short *)(((unsigned char *)&header) + 0x6E) = 0x051E;	// ROM control info 3
 	}
 
 	// load a logo
@@ -319,7 +345,7 @@ void Create()
 			fclose(fi);
 		}
 	}
-	else if (!headerfilename)	// homebrew?
+	else if (!addSecureSyscallsDummy)	// add small NDS loader
 	{
 		if (loadme_size != 156) { fprintf(stderr, "loadme size error\n"); exit(1); }
 		memcpy(header.logo, loadme, loadme_size);		// self-contained NDS loader for *Me GBA cartridge boot
@@ -327,7 +353,7 @@ void Create()
 		memcpy(&header.offset_0xAC, "PASS01\x96", 7);		// automatically start with FlashMe, make it look more like a GBA rom
 	}
 
-	// unique ID... just for homebrew, not very used... obsolete?
+/*	// unique ID... just for homebrew, not very used... obsolete?
 	if (uniquefilename)
 	{
 		unsigned_int id[2];
@@ -351,18 +377,22 @@ void Create()
 		fclose(f);
 		header.offset_0x78 = id[0];
 		header.offset_0x7C = id[1];
-	}
+	}*/
 
-	// game/maker codes
+	// override default game/maker codes
 	if (gamecode) strncpy(header.gamecode, gamecode, 4);
 	if (makercode) strncpy((char *)header.makercode, makercode, 2);
 
-	// header size
-	unsigned int header_size = header.rom_header_size;
-	if (!header_size) { header_size = 0x200; header.rom_header_size = header_size; }
-	fseek(fNDS, header_size, SEEK_SET);
-
 	// --------------------------
+
+	fseek(fNDS, header.rom_header_size, SEEK_SET);
+
+	// dummy area for secure syscalls
+	if (addSecureSyscallsDummy)
+	{
+		unsigned_int x = 0xE7FFDEFF;
+		for (int i=0; i<0x800/4; i++) fwrite(&x, sizeof(x), 1, fNDS);
+	}
 
 	// ARM9 binary
 	if (arm9filename)
@@ -394,7 +424,7 @@ void Create()
 	// ARM9 overlay table
 	if (arm9ovltablefilename)
 	{
-		unsigned_int x1 = 0xDEC00621; fwrite(&x1, sizeof(x1), 1, fNDS);		// ???
+		unsigned_int x1 = 0xDEC00621; fwrite(&x1, sizeof(x1), 1, fNDS);		// 0x2106c0de magic
 		unsigned_int x2 = 0x00000AD8; fwrite(&x2, sizeof(x2), 1, fNDS);		// ???
 		unsigned_int x3 = 0x00000000; fwrite(&x3, sizeof(x3), 1, fNDS);		// ???
 
@@ -503,6 +533,7 @@ void Create()
 		//header.fat_offset = header.fnt_offset + header.fnt_size;		// not aligned
 		header.fat_size = file_count * 8;		// each entry contains top & bottom offset
 		file_top = header.fat_offset + header.fat_size;
+		file_end = file_top;
 
 		// add overlay files
 		for (unsigned int i=0; i<overlay_files; i++)
@@ -525,10 +556,28 @@ void Create()
 
 	// --------------------------
 
-	// application end offset
-	int pad = ((ftell(fNDS) + 0x3) &~ 0x3) - ftell(fNDS);	// align to 4 bytes
-	while (pad--) fputc(0, fNDS);
-	header.application_end_offset = ftell(fNDS);
+//fseek(fNDS, 0, SEEK_END);
+	unsigned int filesize = ftell(fNDS);
+//printf("%d\n", filesize);
+	unsigned int newfilesize = filesize;
+	newfilesize = (newfilesize + 3) &~ 3;	// align to 4 bytes
+	header.application_end_offset = newfilesize;
+
+	newfilesize |= newfilesize >> 16; newfilesize |= newfilesize >> 8;
+	newfilesize |= newfilesize >> 4; newfilesize |= newfilesize >> 2;
+	newfilesize |= newfilesize >> 1; newfilesize++;
+	if (newfilesize <= 128*1024) newfilesize = 128*1024;
+	int devcap = -18;
+	unsigned int x = newfilesize;
+	while (x != 0) { x >>= 1; devcap++; }
+	header.devicecap = (devcap < 0) ? 0 : devcap;
+
+	// pad file
+	if (addSecureSyscallsDummy)
+	{
+		fseek(fNDS, newfilesize-1, SEEK_SET); int c = fgetc(fNDS);
+		fseek(fNDS, newfilesize-1, SEEK_SET); fputc((c >= 0) ? c : 0, fNDS);
+	}
 
 	// fix up header CRCs and write header
 	header.logo_crc = CalcLogoCRC(header);

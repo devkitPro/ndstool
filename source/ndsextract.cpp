@@ -274,6 +274,7 @@ void Extract(char *outfilename, bool indirect_offset, unsigned int offset, bool 
 		fread(&nitrocode, sizeof(nitrocode), 1, fNDS);
 		if (nitrocode == 0xDEC00621)
 		{
+			// 0x2106C0DE, version info, reserved?
 			for (int i=0; i<3; i++)		// write additional 3 words
 			{
 				fwrite(&nitrocode, sizeof(nitrocode), 1, fo);
