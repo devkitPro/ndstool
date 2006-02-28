@@ -55,6 +55,7 @@ extern unsigned int arm9RamAddress;
 extern unsigned int arm7RamAddress;
 extern unsigned int arm9Entry;
 extern unsigned int arm7Entry;
+extern char *title;
 extern char *makercode;
 extern char *gamecode;
 extern int latency1;

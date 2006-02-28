@@ -379,7 +379,8 @@ void Create()
 		header.offset_0x7C = id[1];
 	}*/
 
-	// override default game/maker codes
+	// override default title/game/maker codes
+	if (title) strncpy(header.title, title, 12);
 	if (gamecode) strncpy(header.gamecode, gamecode, 4);
 	if (makercode) strncpy((char *)header.makercode, makercode, 2);
 

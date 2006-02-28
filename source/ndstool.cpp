@@ -35,6 +35,7 @@ char *bannertext = 0;
 char *headerfilename = 0;
 //char *uniquefilename = 0;
 char *logofilename = 0;
+char *title = 0;
 char *makercode = 0;
 char *gamecode = 0;
 char *vhdfilename = 0;
@@ -103,8 +104,8 @@ HelpLine helplines[] =
 	//{"  N-compatibility      -n [L1] [L2] [ver]             uses offset 0x4000", 'n', "Automatically. Use this to create a more 'valid' ROM file. Not required for homebrew.\n"},
 	{"  Latency              -n [L1] [L2] [ver]             default=maximum", 'n'},
 	{"  Logo bitmap/binary   -o file.bmp/file.bin\n"},
-	{"  Maker code           -m code\n"},
-	{"  Game code            -g code\n"},
+	{"  Maker code           -m code                        (deprecated, use -g)\n"},
+	{"  Game code            -g gamecode [makercode] [short-title]\n", 'g', "Game code is 4 characters. Maker code is 2 characters. Title can be up to 12 characters.\n"},
 	//"  unique ID filename  -u file.bin                    for homebrew, auto generated\n"},
 	{"  ARM9 RAM address     -r9 address\n"},
 	{"  ARM7 RAM address     -r7 address\n"},
@@ -186,7 +187,10 @@ int main(int argc, char *argv[])
 	int num_actions = 0;
 	int actions[MAX_ACTIONS];
 
-	// parse parameters
+	/*
+	 * parse parameters to actions
+	 */
+
 	for (int a=1; a<argc; a++)
 	{
 		if (argv[a][0] == '-')
@@ -336,29 +340,12 @@ int main(int argc, char *argv[])
 
 				case 'm':	// maker code
 					REQUIRED(makercode);
-					if (strlen(makercode) != 2)
-					{
-						fprintf(stderr, "Maker code must be 2 characters!\n");
-						return 1;
-					}
 					break;
 
 				case 'g':	// game code
 					REQUIRED(gamecode);
-					if (strlen(gamecode) != 4) {
-						fprintf(stderr, "Game code must be 4 characters!\n");
-						return 1;
-					}
-					for (int i=0; i<4; i++) if ((gamecode[a] >= 'a') && (gamecode[a] <= 'z'))
-					{
-						fprintf(stderr, "Warning: Gamecode contains lowercase characters.\n");
-						break;
-					}
-					if (gamecode[a] == 'A')
-					{
-						fprintf(stderr, "Warning: Gamecode starts with 'A', which might be used for another commercial product.\n");
-						break;
-					}
+					OPTIONAL(makercode);
+					OPTIONAL(title);
 					break;
 
 				case 'y':	// overlay table file / directory
@@ -399,7 +386,42 @@ int main(int argc, char *argv[])
 
 	Title();
 
-	// perform actions
+	/*
+	 * sanity checks
+	 */
+
+	if (gamecode)
+	{
+		if (strlen(gamecode) != 4)
+		{
+			fprintf(stderr, "Game code must be 4 characters!\n");
+			return 1;
+		}
+		for (int i=0; i<4; i++) if ((gamecode[i] >= 'a') && (gamecode[i] <= 'z'))
+		{
+			fprintf(stderr, "Warning: Gamecode contains lowercase characters.\n");
+			break;
+		}
+		if (gamecode[0] == 'A')
+		{
+			fprintf(stderr, "Warning: Gamecode starts with 'A', which might be used for another commercial product.\n");
+		}
+	}
+	if (makercode && (strlen(makercode) != 2))
+	{
+		fprintf(stderr, "Maker code must be 2 characters!\n");
+		return 1;
+	}
+	if (title && (strlen(title) > 12))
+	{
+		fprintf(stderr, "Title can be no more than 12 characters!\n");
+		return 1;
+	}
+
+	/*
+	 * perform actions
+	 */
+
 	int status = 0;
 	for (int i=0; i<num_actions; i++)
 	{
