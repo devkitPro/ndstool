@@ -101,11 +101,10 @@ HelpLine helplines[] =
 	{"  Banner binary        -t file.bin\n"},
 	//"\n"},
 	{"  Header template      -h file.bin\n", 'h', "You can copy the header from another ROM and use it as a basis.\n"},
-	//{"  N-compatibility      -n [L1] [L2] [ver]             uses offset 0x4000", 'n', "Automatically. Use this to create a more 'valid' ROM file. Not required for homebrew.\n"},
-	{"  Latency              -n [L1] [L2] [ver]             default=maximum", 'n'},
+	{"  Latency              -n [L1] [L2]                   default=maximum", 'n'},
 	{"  Logo bitmap/binary   -o file.bmp/file.bin\n"},
-	{"  Maker code           -m code                        (deprecated, use -g)\n"},
-	{"  Game code            -g gamecode [makercode] [short-title]\n", 'g', "Game code is 4 characters. Maker code is 2 characters. Title can be up to 12 characters.\n"},
+	//{"  Maker code           -m code                        (deprecated, use -g)\n"},
+	{"  Game info            -g gamecode [makercode] [short-title] [rom-version]\n", 'g', "Game code is 4 characters. Maker code is 2 characters. Title can be up to 12 characters.\n"},
 	//"  unique ID filename  -u file.bin                    for homebrew, auto generated\n"},
 	{"  ARM9 RAM address     -r9 address\n"},
 	{"  ARM7 RAM address     -r7 address\n"},
@@ -317,7 +316,6 @@ int main(int argc, char *argv[])
 					//compatibility = true;
 					OPTIONAL_INT(latency1);
 					OPTIONAL_INT(latency2);
-					OPTIONAL_INT(romversion);
 					break;
 
 				case 'r':	// RAM address
@@ -346,6 +344,7 @@ int main(int argc, char *argv[])
 					REQUIRED(gamecode);
 					OPTIONAL(makercode);
 					OPTIONAL(title);
+					OPTIONAL_INT(romversion);
 					break;
 
 				case 'y':	// overlay table file / directory

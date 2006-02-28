@@ -321,7 +321,7 @@ void Create()
 			header.reserved2 = 0x04;		// autostart
 			*(unsigned_int *)(((unsigned char *)&header) + 0x0) = 0xEA00002E;		// for PassMe's that start @ 0x08000000
 		}
-		*(unsigned_int *)(((unsigned char *)&header) + 0x60) = 1<<22 | latency2<<16 | 1<<14 | 1<<13;	// ROM control info 1
+		*(unsigned_int *)(((unsigned char *)&header) + 0x60) = 1<<22 | latency2<<16 | 1<<14 | 1<<13 | latency1;	// ROM control info 1
 		*(unsigned_int *)(((unsigned char *)&header) + 0x64) = 1<<29 | latency2<<16 | latency1;	// ROM control info 2
 		*(unsigned_short *)(((unsigned char *)&header) + 0x6E) = 0x051E;	// ROM control info 3
 	}
