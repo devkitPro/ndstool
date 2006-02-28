@@ -387,18 +387,18 @@ void Create()
 
 	fseek(fNDS, header.rom_header_size, SEEK_SET);
 
-	// dummy area for secure syscalls
-	if (addSecureSyscallsDummy)
-	{
-		unsigned_int x = 0xE7FFDEFF;
-		for (int i=0; i<0x800/4; i++) fwrite(&x, sizeof(x), 1, fNDS);
-	}
-
 	// ARM9 binary
 	if (arm9filename)
 	{
 		header.arm9_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
 		fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
+
+		// dummy area for secure syscalls
+		if (addSecureSyscallsDummy)
+		{
+			unsigned_int x = 0xE7FFDEFF;
+			for (int i=0; i<0x800/4; i++) fwrite(&x, sizeof(x), 1, fNDS);
+		}
 
 		unsigned int entry_address = arm9Entry ? arm9Entry : (unsigned int)header.arm9_entry_address;		// template
 		unsigned int ram_address = arm9RamAddress ? arm9RamAddress : (unsigned int)header.arm9_ram_address;		// template
@@ -413,7 +413,7 @@ void Create()
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
-		header.arm9_size = ((size + 3) &~ 3);
+		header.arm9_size = ((size + 3) &~ 3) + (addSecureSyscallsDummy ? 0x800 : 0);
 	}
 	else
 	{
