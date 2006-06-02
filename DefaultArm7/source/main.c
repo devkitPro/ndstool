@@ -1,9 +1,13 @@
 /*---------------------------------------------------------------------------------
-	$Id: main.c,v 1.10 2005-10-19 16:30:44 wntrmute Exp $
+	$Id: main.c,v 1.11 2006-06-02 11:14:18 wntrmute Exp $
 
 	Simple ARM7 stub (sends RTC, TSC, and X/Y data to the ARM 9)
 
 	$Log: not supported by cvs2svn $
+	Revision 1.10  2005/10/19 16:30:44  wntrmute
+	updated default arm7 core
+	bumped ndstool version
+	
 	Revision 1.9  2005/09/13 03:13:36  wntrmute
 	rework to use proper interrupt dispatcher
 	
@@ -13,11 +17,6 @@
 
 ---------------------------------------------------------------------------------*/
 #include <nds.h>
-
-#include <nds/bios.h>
-#include <nds/arm7/touch.h>
-#include <nds/arm7/clock.h>
-
  
 //---------------------------------------------------------------------------------
 void startSound(	int sampleRate,
@@ -47,7 +46,7 @@ void irqVblank() {
 //---------------------------------------------------------------------------------
 	static int heartbeat = 0;
  
-	uint16 but=0, x=0, y=0, xpx=0, ypx=0, z1=0, z2=0, batt=0, aux=0;
+	uint16 but=0, x=0, y=0, xpx=0, ypx=0, z1=0, z2=0, batt=0;
 	int t1=0, t2=0;
 	uint32 temp=0;
 	uint8 ct[sizeof(IPC->curtime)];
@@ -68,14 +67,12 @@ void irqVblank() {
 		y = tempPos.y;
 		xpx = tempPos.px;
 		ypx = tempPos.py;
+		z1 = tempPos.z1;
+		z2 = tempPos.z2;
+		
 	}
  
-	z1 = touchRead(TSC_MEASURE_Z1);
-	z2 = touchRead(TSC_MEASURE_Z2);
- 
- 
 	batt = touchRead(TSC_MEASURE_BATTERY);
-	aux  = touchRead(TSC_MEASURE_AUX);
  
 	// Read the time
 	rtcGetTime((uint8 *)ct);
@@ -95,7 +92,6 @@ void irqVblank() {
 	IPC->touchZ1		= z1;
 	IPC->touchZ2		= z2;
 	IPC->battery		= batt;
-	IPC->aux			= aux;
 	IPC->mailBusy = 0;
  
 	for(i=0; i<sizeof(ct); i++) {
