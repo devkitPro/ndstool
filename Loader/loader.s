@@ -101,6 +101,6 @@ NewARM9Loop:
 
 	.pool
 
-	.ds.b	156 - .
+	.space (_start + 156) - .
 
 	.end
