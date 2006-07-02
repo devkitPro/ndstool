@@ -73,6 +73,7 @@ int CopyFromBin(char *binFilename, unsigned int *size = 0, unsigned int *size_wi
 /*
  * CopyFromElf
  */
+#if 0
 int CopyFromElf(char *elfFilename, unsigned int *entry, unsigned int *ram_address, unsigned int *size)
 {
 	int fd = open(elfFilename, O_RDONLY);
@@ -136,7 +137,7 @@ int CopyFromElf(char *elfFilename, unsigned int *entry, unsigned int *ram_addres
 
 	return 0;
 }
-
+#endif
 /*
  * AddFile
  */
@@ -187,7 +188,7 @@ void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id
 	fwrite(&top, 1, sizeof(top), fNDS);
 	unsigned_int bottom = file_bottom;
 	fwrite(&bottom, 1, sizeof(bottom), fNDS);
-	
+
 	file_top = file_bottom;
 }
 
@@ -207,7 +208,7 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 	unsigned_int entry_start = _entry_start;	// reference location of entry name
 	fwrite(&entry_start, 1, sizeof(entry_start), fNDS);
 	unsigned int _top_file_id = free_file_id;
-	unsigned_short top_file_id = _top_file_id;	// file ID of top entry 
+	unsigned_short top_file_id = _top_file_id;	// file ID of top entry
 	fwrite(&top_file_id, 1, sizeof(top_file_id), fNDS);
 	unsigned_short parent_id = _parent_id;	// ID of parent directory or directory count (root)
 	fwrite(&parent_id, 1, sizeof(parent_id), fNDS);
@@ -218,7 +219,7 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 	{
 		// start of directory entrynames
 		fseek(fNDS, header.fnt_offset + _entry_start, SEEK_SET);
-	
+
 		// write filenames
 		for (Tree *t=tree; t; t=t->next)
 		{
@@ -227,32 +228,32 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 				int namelen = strlen(t->name);
 				fputc(t->directory ? namelen | 128 : namelen, fNDS); _entry_start += 1;
 				fwrite(t->name, 1, namelen, fNDS); _entry_start += namelen;
-	
+
 				//printf("[ %s -> %u ]\n", t->name, free_file_id);
-	
+
 				free_file_id++;
 			}
 		}
-	
+
 		// write directorynames
 		for (Tree *t=tree; t; t=t->next)
 		{
 			if (t->directory)
 			{
 				//printf("*entry %s\n", t->name);
-	
+
 				int namelen = strlen(t->name);
 				fputc(t->directory ? namelen | 128 : namelen, fNDS); _entry_start += 1;
 				fwrite(t->name, 1, namelen, fNDS); _entry_start += namelen;
-	
+
 				//printf("[ %s -> %X ]\n", t->name, t->dir_id);
-	
+
 				unsigned_short _dir_id_tmp = t->dir_id;
 				fwrite(&_dir_id_tmp, 1, sizeof(_dir_id_tmp), fNDS);
 				_entry_start += sizeof(_dir_id_tmp);
 			}
 		}
-		
+
 		fputc(0, fNDS); _entry_start += 1;	// end of directory entrynames
 	}
 
@@ -408,9 +409,11 @@ void Create()
 		if (!ram_address) { ram_address = entry_address = 0x02000000; }
 
 		unsigned int size = 0;
+#if 0
 		if (HasElfExtension(arm9filename))
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
 		else
+#endif
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
@@ -453,9 +456,11 @@ void Create()
 		if (!ram_address) { ram_address = entry_address = 0x03800000; }
 
 		unsigned int size = 0;
+#if 0
 		if (HasElfExtension(arm7filename))
 			CopyFromElf(arm7filename, &entry_address, &ram_address, &size);
 		else
+#endif
 			CopyFromBin(arm7filename, &size);
 
 		header.arm7_entry_address = entry_address;
