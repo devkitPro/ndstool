@@ -8,6 +8,13 @@
 #include "loadme.h"
 #include "ndstree.h"
 
+unsigned int arm9_align = 0x1FF;
+unsigned int arm7_align = 0x1FF;
+unsigned int fnt_align = 0x1FF;		// 0x3 0x1FF
+unsigned int fat_align = 0x1FF;		// 0x3 0x1FF
+unsigned int banner_align = 0x1FF;
+unsigned int file_align = 0x1FF;	// 0x3 0x1FF
+
 unsigned int overlay_files = 0;
 
 unsigned char romcontrol[] = { 0x00,0x60,0x58,0x00,0xF8,0x08,0x18,0x00 };
@@ -138,10 +145,11 @@ int CopyFromElf(char *elfFilename, unsigned int *entry, unsigned int *ram_addres
 	return 0;
 }
 #endif
+
 /*
  * AddFile
  */
-void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id, unsigned int alignmask)
+void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id)
 {
 	// make filename
 	char strbuf[MAXPATHLEN];
@@ -151,9 +159,8 @@ void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id
 
 	//unsigned int file_end = ftell(fNDS);
 
-	file_top = (file_top + alignmask) &~ alignmask;		// align to alignmask+1 bytes
+	file_top = (file_top + file_align) &~ file_align;
 	fseek(fNDS, file_top, SEEK_SET);
-
 
 	FILE *fi = fopen(strbuf, "rb");
 	if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", strbuf); exit(1); }
@@ -196,7 +203,7 @@ void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id
  * AddDirectory
  * Walks the tree and adds files to NDS
  */
-void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id, unsigned int alignmask)
+void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id)
 {
 	// skip dummy node
 	tree = tree->next;
@@ -265,7 +272,7 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 
 		if (!t->directory)
 		{
-			AddFile(filerootdir, prefix, t->name, file_id++, alignmask);
+			AddFile(filerootdir, prefix, t->name, file_id++);
 		}
 	}
 
@@ -280,7 +287,7 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 			strcpy(strbuf, prefix);
 			strcat(strbuf, t->name);
 			strcat(strbuf, "/");
-			AddDirectory(t->directory, strbuf, t->dir_id, this_dir_id, alignmask);
+			AddDirectory(t->directory, strbuf, t->dir_id, this_dir_id);
 		}
 	}
 }
@@ -346,7 +353,7 @@ void Create()
 			fclose(fi);
 		}
 	}
-	else if (!addSecureSyscallsDummy)	// add small NDS loader
+	else if (!headerfilename)	// add small NDS loader
 	{
 		if (loadme_size != 156) { fprintf(stderr, "loadme size error\n"); exit(1); }
 		memcpy(header.logo, loadme, loadme_size);		// self-contained NDS loader for *Me GBA cartridge boot
@@ -392,7 +399,7 @@ void Create()
 	// ARM9 binary
 	if (arm9filename)
 	{
-		header.arm9_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
+		header.arm9_rom_offset = (ftell(fNDS) + arm9_align) &~ arm9_align;
 		fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
 
 		// dummy area for secure syscalls
@@ -445,7 +452,7 @@ void Create()
 	// fseek(fNDS, 1388772, SEEK_CUR);		// test for ASME
 
 	// ARM7 binary
-	header.arm7_rom_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
+	header.arm7_rom_offset = (ftell(fNDS) + arm7_align) &~ arm7_align;
 	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
 	if (arm7filename)
 	{
@@ -496,27 +503,8 @@ void Create()
 		exit(1);
 	}
 
-	// banner
-	if (bannerfilename)
-	{
-		header.banner_offset = (ftell(fNDS) + 0x1FF) &~ 0x1FF;	// align to 512 bytes
-		fseek(fNDS, header.banner_offset, SEEK_SET);
-		if (bannertype == BANNER_IMAGE)
-		{
-			IconFromBMP();
-		}
-		else
-		{
-			CopyFromBin(bannerfilename, 0);
-		}
-	}
-	else
-	{
-		header.banner_offset = 0;
-	}
-
 	// filesystem
-	if (filerootdir || overlaydir)
+	//if (filerootdir || overlaydir)
 	{
 		// read directory structure
 		Tree *filetree = new Tree();		// dummy root node 0xF000
@@ -526,7 +514,7 @@ void Create()
 
 		// calculate offsets required for FNT and FAT
 		_entry_start = 8*directory_count;		// names come after directory structs
-		header.fnt_offset = ftell(fNDS);	// not aligned			//(ftell(fNDS) + 0x1FF) &~ 0x1FF;		// align to 512 bytes
+		header.fnt_offset = (ftell(fNDS) + fnt_align) &~ fnt_align;
 		header.fnt_size =
 			_entry_start +		// directory structs
 			total_name_size +	// total number of name characters for dirs and files
@@ -534,22 +522,41 @@ void Create()
 			file_count*1 +		// files: name length (1)
 			- 3;				// root directory only has an end-character
 		file_count += overlay_files;		// didn't take overlay files into FNT size, but have to be calculated into FAT size
-		//header.fat_offset = (header.fnt_offset + header.fnt_size + 0x1FF) &~ 0x1FF;		// align to 512 bytes;
-		header.fat_offset = (header.fnt_offset + header.fnt_size + 0x3) &~ 0x3;		// align to 4 bytes. should be 0xFF's
-		//header.fat_offset = header.fnt_offset + header.fnt_size;		// not aligned
+		header.fat_offset = (header.fnt_offset + header.fnt_size + fat_align) &~ fat_align;
 		header.fat_size = file_count * 8;		// each entry contains top & bottom offset
-		file_top = header.fat_offset + header.fat_size;
-		file_end = file_top;
+
+		// banner after FNT/FAT
+		if (bannerfilename)
+		{
+			header.banner_offset = (header.fat_offset + header.fat_size + banner_align) &~ banner_align;
+			file_top = header.banner_offset + 0x840;
+			fseek(fNDS, header.banner_offset, SEEK_SET);
+			if (bannertype == BANNER_IMAGE)
+			{
+				IconFromBMP();
+			}
+			else
+			{
+				CopyFromBin(bannerfilename, 0);
+			}
+		}
+		else
+		{
+			file_top = header.fat_offset + header.fat_size;
+			header.banner_offset = 0;
+		}
+
+		file_end = file_top;	// no file data as yet
 
 		// add overlay files
 		for (unsigned int i=0; i<overlay_files; i++)
 		{
 			char s[32]; sprintf(s, OVERLAY_FMT, free_file_id);
-			AddFile(overlaydir, "/", s, free_file_id, 0x3);
+			AddFile(overlaydir, "/", s, free_file_id);
 			free_file_id++;		// incremented up to overlay_files
 		}
 
-		AddDirectory(filetree, "/", 0xF000, directory_count, 0x3);
+		AddDirectory(filetree, "/", 0xF000, directory_count);
 		fseek(fNDS, file_end, SEEK_SET);
 
 		if (verbose)
@@ -562,10 +569,7 @@ void Create()
 
 	// --------------------------
 
-//fseek(fNDS, 0, SEEK_END);
-	unsigned int filesize = ftell(fNDS);
-//printf("%d\n", filesize);
-	unsigned int newfilesize = filesize;
+	unsigned int newfilesize = file_end;	//ftell(fNDS);
 	newfilesize = (newfilesize + 3) &~ 3;	// align to 4 bytes
 	header.application_end_offset = newfilesize;
 

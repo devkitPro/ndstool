@@ -463,7 +463,7 @@ void encrypt_arm9(u32 cardheader_gamecode, unsigned char *data)
 /*
  * EnDecryptSecureArea
  */
-void EnDecryptSecureArea(char *ndsfilename)
+void EnDecryptSecureArea(char *ndsfilename, char endecrypt_option)
 {
 	fNDS = fopen(ndsfilename, "r+b");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
@@ -473,77 +473,97 @@ void EnDecryptSecureArea(char *ndsfilename)
 	fseek(fNDS, 0x4000, SEEK_SET);
 	fread(data, 1, 0x4000, fNDS);
 
+	bool do_decrypt = (endecrypt_option == 'd');
+	bool do_encrypt = (endecrypt_option == 'e') || (endecrypt_option == 'E');
+	unsigned int rounds_offsets = (endecrypt_option == 'E') ? 0x2000 : 0x1600;
+	unsigned int sbox_offsets = (endecrypt_option == 'E') ? 0x2400 : 0x2800;
+
+	// check if ROM is already encrypted
 	if (romType == ROMTYPE_NDSDUMPED)
 	{
-		encrypt_arm9(*(u32 *)header.gamecode, data);
-		header.secure_area_crc = CalcCrc16(data, 0x4000);
-		header.header_crc = CalcHeaderCRC(header);
-
-		init0(*(u32 *)header.gamecode);
-		srand(*(u32 *)header.gamecode);
-
-		// clear data after header
-		fseek(fNDS, 0x200, SEEK_SET);
-		for (unsigned int i=0x200; i<0x1000; i++) fputc(0, fNDS);
-	
-		// random data
-		fseek(fNDS, 0x1000, SEEK_SET);
-		for (unsigned int i=0x1000; i<0x4000; i++) fputc(rand(), fNDS);
-	
-		// round table
-		fseek(fNDS, 0x1600, SEEK_SET);
-		fwrite(card_hash + 0, 4, 18, fNDS);
-	
-		// S-boxes
-		for (int i=0; i<4; i++)
+		if (do_decrypt)
 		{
-			fseek(fNDS, 0x2800 + 4*256*i, SEEK_SET);
-			fwrite(card_hash + 18 + i*256, 4, 256, fNDS);	// s
+			printf("Already decrypted.\n");
 		}
+		else 
+		{
+			encrypt_arm9(*(u32 *)header.gamecode, data);
+			header.secure_area_crc = CalcCrc16(data, 0x4000);
+			header.header_crc = CalcHeaderCRC(header);
+	
+			init0(*(u32 *)header.gamecode);
+			srand(*(u32 *)header.gamecode);
+	
+			// clear data after header
+			fseek(fNDS, 0x200, SEEK_SET);
+			for (unsigned int i=0x200; i<0x1000; i++) fputc(0, fNDS);
 
-		// test patterns
-		fseek(fNDS, 0x3000, SEEK_SET);
-		for (int i=0x3000; i<0x3008; i++) fputc("\xFF\x00\xFF\x00\xAA\x55\xAA\x55"[i - 0x3000], fNDS);
-		for (int i=0x3008; i<0x3200; i++) fputc((u8)i, fNDS);
-		for (int i=0x3200; i<0x3400; i++) fputc((u8)(0xFF-i), fNDS);
-		for (int i=0x3400; i<0x3600; i++) fputc(0x00, fNDS);
-		for (int i=0x3600; i<0x3800; i++) fputc(0xFF, fNDS);
-		for (int i=0x3800; i<0x3A00; i++) fputc(0x0F, fNDS);
-		for (int i=0x3A00; i<0x3C00; i++) fputc(0xF0, fNDS);
-		for (int i=0x3C00; i<0x3E00; i++) fputc(0x55, fNDS);
-		for (int i=0x3E00; i<0x4000-1; i++) fputc(0xAA, fNDS);
-		fputc(0x00, fNDS);
+/*			// random data
+			fseek(fNDS, 0x1000, SEEK_SET);
+			for (unsigned int i=0x1000; i<0x4000; i++) fputc(rand(), fNDS);
+*/
+			// rounds table
+			fseek(fNDS, rounds_offsets, SEEK_SET);
+			fwrite(card_hash + 0, 4, 18, fNDS);
+	
+			// S-boxes
+			for (int i=0; i<4; i++)
+			{
+				fseek(fNDS, sbox_offsets + 4*256*i, SEEK_SET);
+				fwrite(card_hash + 18 + i*256, 4, 256, fNDS);	// s
+			}
 
-		// write secure 0x800
-		fseek(fNDS, 0x4000, SEEK_SET);
-		fwrite(data, 1, 0x800, fNDS);
-
-		// calculate CRCs and write header
-		header.secure_area_crc = CalcSecureAreaCRC(false);
-		header.logo_crc = CalcLogoCRC(header);
-		header.header_crc = CalcHeaderCRC(header);
-		fseek(fNDS, 0, SEEK_SET);
-		fwrite(&header, 512, 1, fNDS);
-
-		printf("Encrypted.\n");
+			// test patterns
+			fseek(fNDS, 0x3000, SEEK_SET);
+			for (int i=0x3000; i<0x3008; i++) fputc("\xFF\x00\xFF\x00\xAA\x55\xAA\x55"[i - 0x3000], fNDS);
+			for (int i=0x3008; i<0x3200; i++) fputc((u8)i, fNDS);
+			for (int i=0x3200; i<0x3400; i++) fputc((u8)(0xFF-i), fNDS);
+			for (int i=0x3400; i<0x3600; i++) fputc(0x00, fNDS);
+			for (int i=0x3600; i<0x3800; i++) fputc(0xFF, fNDS);
+			for (int i=0x3800; i<0x3A00; i++) fputc(0x0F, fNDS);
+			for (int i=0x3A00; i<0x3C00; i++) fputc(0xF0, fNDS);
+			for (int i=0x3C00; i<0x3E00; i++) fputc(0x55, fNDS);
+			for (int i=0x3E00; i<0x4000-1; i++) fputc(0xAA, fNDS);
+			fputc(0x00, fNDS);
+	
+			// write secure 0x800
+			fseek(fNDS, 0x4000, SEEK_SET);
+			fwrite(data, 1, 0x800, fNDS);
+	
+			// calculate CRCs and write header
+			header.secure_area_crc = CalcSecureAreaCRC(false);
+			header.logo_crc = CalcLogoCRC(header);
+			header.header_crc = CalcHeaderCRC(header);
+			fseek(fNDS, 0, SEEK_SET);
+			fwrite(&header, 512, 1, fNDS);
+	
+			printf("Encrypted.\n");
+		}
 	}
-	else if (romType >= ROMTYPE_ENCRSECURE)
+	else if (romType >= ROMTYPE_ENCRSECURE)		// includes ROMTYPE_MASKROM
 	{
-		decrypt_arm9(*(u32 *)header.gamecode, data);
-
-		// clear data after header
-		fseek(fNDS, 0x200, SEEK_SET);
-		for (unsigned int i=0x200; i<0x4000; i++) fputc(0, fNDS);
-
-		// write secure 0x800
-		fseek(fNDS, 0x4000, SEEK_SET);
-		fwrite(data, 1, 0x800, fNDS);
-
-		// write header
-		fseek(fNDS, 0, SEEK_SET);
-		fwrite(&header, 512, 1, fNDS);
-
-		printf("Decrypted.\n");
+		if (do_encrypt)
+		{
+			printf("Already encrypted.\n");
+		}
+		else
+		{
+			decrypt_arm9(*(u32 *)header.gamecode, data);
+	
+			// clear data after header
+			fseek(fNDS, 0x200, SEEK_SET);
+			for (unsigned int i=0x200; i<0x4000; i++) fputc(0, fNDS);
+	
+			// write secure 0x800
+			fseek(fNDS, 0x4000, SEEK_SET);
+			fwrite(data, 1, 0x800, fNDS);
+	
+			// write header
+			fseek(fNDS, 0, SEEK_SET);
+			fwrite(&header, 512, 1, fNDS);
+	
+			printf("Decrypted.\n");
+		}
 	}
 	else
 	{

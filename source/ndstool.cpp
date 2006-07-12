@@ -43,6 +43,7 @@ char *sramfilename = 0;
 int latency1 = 0x1FFF;	//0x8F8;
 int latency2 = 0x3F;	//0x18;
 int romversion = 0;
+char endecrypt_option = 0;
 
 int bannertype;
 unsigned int arm9RamAddress = 0;
@@ -83,7 +84,7 @@ HelpLine helplines[] =
 	{"Hook ARM7 executable   -k [file.nds]                  see manual\n", 'k', "ask me for example\n"},
 	{"Fix header CRC         -f [file.nds]\n", 'f', "Some commands do this automatically.\n"},
 	//"Test                   -T [file.nds]\n"},
-	{"En/decrypt secure area -s[e|d] [file.nds]             also adds testing data\n", 's', "En/decrypt the secure area and put encryption/test data. This data is used for the card command encryption. It will automatically detect the current state. Optionally add 'e' or 'd' to specify en/decryption.\n"},
+	{"En/decrypt secure area -s[e|E|d] [file.nds]           also adds testing data\n", 's', "En/decrypt the secure area and put/remove card encryption tables and test patterns. Optionally add: d for decryption, e for Nintendo offsets, E for most other cards.\n"},
 	//"Hash file & compare:   -@ [arm7.bin]\n"},		// used in buildscript
 	{"List files:            -l [file.nds]\n", 'l', "Gives a list of files in de NDS file. Use -v option to show more information such as offset and length.\n"},
 	{"Create                 -c [file.nds]\n"},
@@ -101,7 +102,7 @@ HelpLine helplines[] =
 	{"  Banner binary        -t file.bin\n"},
 	//"\n"},
 	{"  Header template      -h file.bin\n", 'h', "You can copy the header from another ROM and use it as a basis.\n"},
-	{"  Latency              -n [L1] [L2]                   default=maximum", 'n'},
+	{"  Latency              -n [L1] [L2]                   default=maximum\n", 'n'},
 	{"  Logo bitmap/binary   -o file.bmp/file.bin\n"},
 	//{"  Maker code           -m code                        (deprecated, use -g)\n"},
 	{"  Game info            -g gamecode [makercode] [short-title] [rom-version]\n", 'g', "Game code is 4 characters. Maker code is 2 characters. Title can be up to 12 characters.\n"},
@@ -213,6 +214,7 @@ int main(int argc, char *argv[])
 				case 's':	// en-/decrypt secure area
 				{
 					ADDACTION(ACTION_ENCRYPTSECUREAREA);
+					endecrypt_option = argv[a][2];
 					OPTIONAL(ndsfilename);
 					break;
 				}
@@ -440,6 +442,7 @@ int main(int argc, char *argv[])
 				if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
 				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
 				if (headerfilename) Extract(headerfilename, false, 0x0, false, 0x200);
+				if (logofilename) Extract(logofilename, false, 0xC0, false, 156);	// *** bin only
 				if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
 				if (arm7ovltablefilename) Extract(arm7ovltablefilename, true, 0x58, true, 0x5C);
 				if (overlaydir) ExtractOverlayFiles();
@@ -484,8 +487,10 @@ int main(int argc, char *argv[])
 			}
 
 			case ACTION_ENCRYPTSECUREAREA:
-				/*status =*/ EnDecryptSecureArea(ndsfilename);
+			{
+				/*status =*/ EnDecryptSecureArea(ndsfilename, endecrypt_option);
 				break;
+			}
 		}
 	}
 

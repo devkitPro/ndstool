@@ -7,15 +7,18 @@ ROMLIST2=romlist_u.dat
 ROMLIST=romlist.dat
 TMPFILE=info.tmp
 
-NDS_MAIN_DIR=C:/public/nds
+NDS_MAIN_DIR=N:
+#C:/public/nds
 NDS_INCOMING_DIR=$NDS_MAIN_DIR/incoming
 NDS_FOUND_DIR=$NDS_MAIN_DIR/found
 NDS_NOTFOUND_DIR=$NDS_MAIN_DIR/notfound
 PASSME_OUTPUT_DIR=$NDS_MAIN_DIR/passme
 
+"C:/Windows/system32/subst.exe" N: \\\\akusho\\darkfader\\.mldonkey\\incoming\\nds
+
 NDSTOOL=C:/work/DS/buildscripts/tools/nds/ndstool/ndstool
 
-#rm "$ROMLIST"
+rm "$ROMLIST"
 
 if [[ ! -f "$ROMLIST" ]]; then
 	echo "downloading romlist..."
@@ -54,6 +57,9 @@ rm $NDS_INCOMING_DIR/*.nfo $NDS_INCOMING_DIR/*.jpg $NDS_INCOMING_DIR/*.png $NDS_
 	echo "--"
 ) >> generate.sql 
 
+$NDSTOOL || exit
+zip -L || exit
+
 # rename and generate PassMe files
 for NDS in $NDS_INCOMING_DIR/*.nds; do
 	echo "$NDS"
@@ -64,7 +70,7 @@ for NDS in $NDS_INCOMING_DIR/*.nds; do
 	GAMECODE=`gawk 'BEGIN { FS="\011"; } /Game code/ { print substr($3,1,4) }' $TMPFILE`
 	ROMVERSION=`gawk 'BEGIN { FS="\011"; } /ROM version/ { print substr($3,4,1) }' $TMPFILE`
 	LONGFILENAME=`echo "$INDEX - $GAMECODE-$ROMVERSION - $TITLE" |
-		gawk 'BEGIN { FS="/"; OFS="/"; } { gsub("[/\\?:<>|]","_",$(NF)); print $0 }' |
+		gawk 'BEGIN { FS="/"; OFS="/"; } { gsub("[/\\\\?:<>|]","_",$(NF)); print $0 }' |
 		gawk 'BEGIN { FS="\\\\"; OFS="\\\\"; } { gsub("[/\\\\?:<>|]","_",$(NF)); print $0 }'
 	`
 	SHORTFILENAME="$GAMECODE-$ROMVERSION"
@@ -113,7 +119,6 @@ for NDS in $NDS_INCOMING_DIR/*.nds; do
 
 		) | gawk '
 			function strtonum2(a) { base=10; v=0; for (i=1; ; i++) { c=substr(a,i,1); if (c=="x") { base=16; continue; } if (c=="") break; if (hex[c]=="") break; v=v*base + hex[toupper(c)]; } return v; }
-			function lshift(v,n) { for (i=1; i<=n; i++) v=v*2; return v; }
 			BEGIN { FS="\011"; for (i=0; i<10; i++) hex[i]=i; hex["A"]=10; hex["B"]=11; hex["C"]=12; hex["D"]=13; hex["E"]=14; hex["F"]=15; }
 
 			{ gsub("\015",""); _2=strtonum2($2); _3=strtonum2($3); }
@@ -153,7 +158,6 @@ done
 # find highest rom number
 HIGHEST=`gawk '
 	function strtonum2(a) { base=10; v=0; for (i=1; ; i++) { c=substr(a,i,1); if (c=="x") { base=16; continue; } if (c=="") break; if (hex[c]=="") break; v=v*base + hex[toupper(c)]; } return v; }
-	function lshift(v,n) { for (i=1; i<=n; i++) v=v*2; return v; }
 	BEGIN { FS="\xAC"; for (i=0; i<10; i++) hex[i]=i; hex["A"]=10; hex["B"]=11; hex["C"]=12; hex["D"]=13; hex["E"]=14; hex["F"]=15; }
 	$2 ~ /Demo/ { $2="" }
 	$2 ~ /Nuke/ { $2="" }
@@ -164,11 +168,10 @@ HIGHEST=`gawk '
 # list my NDS files and find out the missing ones
 ls $NDS_FOUND_DIR $NDS_NOTFOUND_DIR | sort | gawk -v HIGHEST=$HIGHEST '
 	function strtonum2(a) { base=10; v=0; for (i=1; ; i++) { c=substr(a,i,1); if (c=="x") { base=16; continue; } if (c=="") break; if (hex[c]=="") break; v=v*base + hex[toupper(c)]; } return v; }
-	function lshift(v,n) { for (i=1; i<=n; i++) v=v*2; return v; }
 	BEGIN { for (i=0; i<10; i++) hex[i]=i; hex["A"]=10; hex["B"]=11; hex["C"]=12; hex["D"]=13; hex["E"]=14; hex["F"]=15; }
 
 	{ gsub("^0*","",$1); N=strtonum2($1); roms[N]=$0; }
-	END { for (I=0; I<=HIGHEST; I++) if (!roms[I]) print "Missing: " I roms[I]; }
+	END { for (I=265; I<=HIGHEST; I++) if (!roms[I]) print "Missing: " I roms[I]; }
 '
 
 #du found/*.nds notfound/*.nds
