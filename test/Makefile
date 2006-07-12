@@ -4,14 +4,14 @@ PATH := ./:../:$(PATH)
 repack_test: files repacked.nds files2
 
 files: original.nds Makefile ../ndstool
-	@-rm -r files
+	-@rm -r files
 	ndstool -x $< -7 arm7.bin -9 arm9.bin -h header.bin -t banner.bin -y overlays -d files
 
 repacked.nds: arm7.bin arm9.bin header.bin files Makefile ../ndstool
 	ndstool -c $@ -7 arm7.bin -9 arm9.bin -h header.bin -t banner.bin -y overlays -d files
 
 files2: repacked.nds Makefile ../ndstool
-	@-rm -r files2
+	-@rm -r files2
 	ndstool -x $< -d files2
 
 

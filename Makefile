@@ -164,6 +164,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT): $(OFILES)
 	@echo linking
 	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $(OUTPUT)$(EXEEXT)
+	-@strip $(OUTPUT)$(EXEEXT)
 	-@( cd $(OUTPUTDIR); upx -q -9 $(TARGET)$(EXEEXT) )
 
 #---------------------------------------------------------------------------------
