@@ -11,6 +11,7 @@
 /*
  * Data
  */
+extern unsigned short ccitt16tab[];
 extern unsigned short crc16tab[];
 extern unsigned long crc32tab[];
 
@@ -18,6 +19,21 @@ extern unsigned long crc32tab[];
  * Defines
  */
 #define CRC_TEMPLATE	template <typename CrcType, CrcType *crcTable>
+
+/*
+ * CalcCcitt
+ * Does not perform final inversion.
+ */
+#define CalcCcitt_	CalcCcitt<CrcType, crcTable>
+#define CalcCcitt16	CalcCcitt<typeof(*ccitt16tab), ccitt16tab>
+CRC_TEMPLATE inline CrcType CalcCcitt(unsigned char *data, unsigned int length, CrcType crc = (CrcType)0)
+{
+	for (unsigned int i=0; i<length; i++)
+	{
+		crc = (crc << 8) ^ crcTable[(crc >> 8) ^ data[i]];
+	}
+	return crc;
+}
 
 /*
  * CalcCrc
