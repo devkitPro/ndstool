@@ -9,10 +9,10 @@
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 TARGET		:=	ndstool
-BUILD			:=	build
+BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
-DATA			:=	data
+DATA		:=	data
 
 export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
@@ -39,17 +39,17 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM	:= win32
 	EXEEXT		:= .exe
 	CFLAGS		+= -mno-cygwin
-	LDFLAGS		+= -mno-cygwin -Wl,--strip-debug
+	LDFLAGS		+= -mno-cygwin -s
 endif
 
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	CFLAGS		+= -mno-cygwin
-	LDFLAGS		+= -mno-cygwin -Wl,--strip-debug
+	LDFLAGS		+= -mno-cygwin -s
 	EXEEXT		:= .exe
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
-	LDFLAGS 	+= -static -Wl,--strip-debug
+	LDFLAGS 	+= -static -s
 endif
 
 CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
@@ -118,7 +118,6 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 #---------------------------------------------------------------------------------
 $(BUILD):
-	@echo $(PATH)
 	@[ -d $@ ] || mkdir -p $@
 	@make PassMeIncludes
 	@make -C DefaultArm7
@@ -164,7 +163,6 @@ DEPENDS	:=	$(OFILES:.o=.d)
 $(OUTPUT): $(OFILES)
 	@echo linking
 	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $(OUTPUT)$(EXEEXT)
-	-@strip $(OUTPUT)$(EXEEXT)
 	-@( cd $(OUTPUTDIR); upx -q -9 $(TARGET)$(EXEEXT) )
 
 #---------------------------------------------------------------------------------
