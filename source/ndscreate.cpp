@@ -583,11 +583,8 @@ void Create()
 	header.devicecap = (devcap < 0) ? 0 : devcap;
 
 	// pad file
-	if (addSecureSyscallsDummy)
-	{
-		fseek(fNDS, newfilesize-1, SEEK_SET); int c = fgetc(fNDS);
-		fseek(fNDS, newfilesize-1, SEEK_SET); fputc((c >= 0) ? c : 0, fNDS);
-	}
+	fseek(fNDS, newfilesize-1, SEEK_SET); int c = fgetc(fNDS);
+	fseek(fNDS, newfilesize-1, SEEK_SET); fputc((c >= 0) ? c : 0, fNDS);
 
 	// fix up header CRCs and write header
 	header.logo_crc = CalcLogoCRC(header);
