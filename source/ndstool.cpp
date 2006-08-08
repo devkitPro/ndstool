@@ -32,7 +32,7 @@ char *arm9ovltablefilename = 0;
 char *bannerfilename = 0;
 char *bannertext = 0;
 //bool compatibility = false;
-char *headerfilename = 0;
+char *headerfilename_or_size = 0;
 //char *uniquefilename = 0;
 char *logofilename = 0;
 char *title = 0;
@@ -67,57 +67,60 @@ void Title()
  */
 struct HelpLine
 {
-	char *line;
-	char option_char;
-	char *context;
+	char *option_char;
+	char *text;
+
+	void Print()
+	{
+		char s[1024];
+		strcpy(s, text);
+		printf("%-22s ", strtok(s, "\n"));
+		char *p = strtok(0, "\n"); if (p) printf("%-30s ", p);
+		for (int i=0; ; i++)
+		{
+			char *p = strtok(0, "\n");
+			if (!p) { printf("\n"); break; }
+			if (i) printf("\n%54s", "");
+			printf("%s", p);
+		}
+	}
 };
 
 HelpLine helplines[] =
 {
-	{"Parameter              Syntax                         Comments\n"},
-	{"---------              ------                         --------\n"},
-	{"Show this help:        -?[option]                     global or specific help\n"},
-	{"Show information:      -i [file.nds]\n", 'i', "Header information. Use in conjuction with -v to show even more information such as CRC32 of the file and even look it up in the specified dat-file for ROM release information.\n"},
-	{"Information options:                                  optional\n"},
-	{"  Show more info       -v [roms_rc.dat]               checksums, warnings, release info\n"},
-	{"PassMe:                -p [file.nds] [passme.vhd] [passme.sav]\n", 'p', "\n"},
-	{"Hook ARM7 executable   -k [file.nds]                  see manual\n", 'k', "ask me for example\n"},
-	{"Fix header CRC         -f [file.nds]\n", 'f', "Some commands do this automatically.\n"},
-	//"Test                   -T [file.nds]\n"},
-	{"En/decrypt secure area -s[e|E|d] [file.nds]           also adds testing data\n", 's', "En/decrypt the secure area and put/remove card encryption tables and test patterns. Optionally add: d for decryption, e for Nintendo offsets, E for most other cards.\n"},
-	//"Hash file & compare:   -@ [arm7.bin]\n"},		// used in buildscript
-	{"List files:            -l [file.nds]\n", 'l', "Gives a list of files in de NDS file. Use -v option to show more information such as offset and length.\n"},
-	{"Create                 -c [file.nds]\n"},
-	{"Extract                -x [file.nds]\n"},
-	{"Create/Extract options:                               optional\n"},
-	{"  Show more info       -v[v...]                       filenames etc.\n", 'v', "Use multiple v's for more information.\n"},
-	//"\n"},
-	{"  ARM9 executable      -9 file.bin\n"},
-	{"  ARM7 executable      -7 file.bin\n"},
-	{"  ARM9 overlay table   -y9 file.bin\n"},
-	{"  ARM7 overlay table   -y7 file.bin\n"},
-	{"  Data files           -d directory\n"},
-	{"  Overlay files        -y directory\n"},
-	{"  Banner bitmap/text   -b file.bmp \"text;text;text\"   3 lines max.\n", 'b', "The three lines are showed in the firmware. Seperate with a semicolon.\n"},
-	{"  Banner binary        -t file.bin\n"},
-	//"\n"},
-	{"  Header template      -h file.bin\n", 'h', "You can copy the header from another ROM and use it as a basis.\n"},
-	{"  Latency              -n [L1] [L2]                   default=maximum\n", 'n'},
-	{"  Logo bitmap/binary   -o file.bmp/file.bin\n"},
-	//{"  Maker code           -m code                        (deprecated, use -g)\n"},
-	{"  Game info            -g gamecode [makercode] [short-title] [rom-version]\n", 'g', "Game code is 4 characters. Maker code is 2 characters. Title can be up to 12 characters.\n"},
-	//"  unique ID filename  -u file.bin                    for homebrew, auto generated\n"},
-	{"  ARM9 RAM address     -r9 address\n"},
-	{"  ARM7 RAM address     -r7 address\n"},
-	{"  ARM9 RAM entry       -e9 address\n"},
-	{"  ARM7 RAM entry       -e7 address\n"},
-	{"  Wildcard filemask(s) -w [filemask]...               * and ? are special\n"},
-	{"Common options:\n"},
-	{"  NDS filename         [file.nds]\n"},
-	{"\n"},
-	{"You can perform multiple actions. They are performed in specified order.\n"},
-	{"You only need to specify the NDS filename once. This and other options can appear anywhere.\n"},
-	{"Addresses can be prefixed with '0x' to use hexadecimal format.\n"},
+	{"",	"Parameter\nSyntax\nComments"},
+	{"",	"---------\n------\n--------"},
+	{"?",	"Show this help:\n-?[option]\nAll or single help for an option."},
+	{"i",	"Show information:\n-i [file.nds]\nHeader information."},
+	{"v",	"  Show more info\n-v [roms_rc.dat]\nChecksums, warnings, release info"},
+	{"p",	"PassMe:\n-p [file.nds] [passme.vhd] [passme.sav]\nGenerates PassMe2 files."},
+	{"k",	"Hook ARM7 executable\n-k [file.nds]\nCurrently not tested."},
+	{"f",	"Fix header CRC\n-f [file.nds]\nYou only need this after manual editing."},
+	//{"T",	"Test\n-T [file.nds]"},
+	{"s",	"En/decrypt secure area\n-s[e|E|d] [file.nds]\nEn/decrypt the secure area and\nput/remove card encryption tables and test patterns.\nOptionally add: d for decryption, e/E for encryption.\n(e: Nintendo offsets, E: others)"},
+	//{"@",	"Hash file & compare:\n-@ [arm7.bin]"},		// used in buildscript
+	{"1",	"List files:\n-l [file.nds]\nGive a list of contained files."},
+	{"v",	"  Show offsets/sizes\n-v"},
+	{"cx",	"Create/Extract\n-c/-x [file.nds]"},
+	{"v",	"  Show more info\n-v[v...]\nShow filenames and more header info.\nUse multiple v's for more information."},
+	{"9",	"  ARM9 executable\n-9 file.bin"},
+	{"7",	"  ARM7 executable\n-7 file.bin"},
+	{"y9",	"  ARM9 overlay table\n-y9 file.bin"},
+	{"y7",	"  ARM7 overlay table\n-y7 file.bin"},
+	{"d",	"  Data files\n-d directory"},
+	{"y",	"  Overlay files\n-y directory"},
+	{"b",	"  Banner bitmap/text\n-b file.bmp \"text;text;text\"\nThe three lines are shown at different sizes."},
+	{"t",	"  Banner binary\n-t file.bin"},
+	{"h",	"  Header template\n-h file.bin\nUse the header from another ROM as a template."},
+	{"h",	"  Header size\n-h size\nA header size of 0x4000 is default for real cards, 0x200 for homebrew."},
+	{"n",	"  Latency\n-n [L1] [L2]\ndefault=maximum"},
+	{"o",	"  Logo bitmap/binary\n-o file.bmp/file.bin"},
+	{"g",	"  Game info\n-g gamecode [makercode] [title] [rom ver]\nSets game-specific information.\nGame code is 4 characters. Maker code is 2 characters.\nTitle can be up to 12 characters."},
+	{"r",	"  ARM9 RAM address\n-r9 address"},
+	{"r",	"  ARM7 RAM address\n-r7 address"},
+	{"e",	"  ARM9 RAM entry\n-e9 address"},
+	{"e",	"  ARM7 RAM entry\n-e7 address"},
+	{"w",	"  Wildcard filemask(s)\n-w [filemask]...\n* and ? are wildcard characters."},
 };
 
 /*
@@ -130,17 +133,15 @@ void Help(char *specificoption = 0)
 
 	if (specificoption)
 	{
-		HelpLine *hl = 0;
+		bool found = false;
 		for (unsigned int i=0; i<(sizeof(helplines) / sizeof(helplines[0])); i++)
 		{
-			if (helplines[i].option_char == *specificoption) { hl = helplines + i; break; }
+			for (char *o = helplines[i].option_char; *o; o++)
+			{
+				if (*o == *specificoption) { helplines[i].Print(); found = true; }
+			}
 		}
-		if (hl)
-		{
-			puts(hl->line);
-			puts(hl->context);
-		}
-		else
+		if (!found)
 		{
 			printf("Unknown option: %s\n\n", specificoption);
 		}
@@ -149,8 +150,12 @@ void Help(char *specificoption = 0)
 	{
 		for (unsigned int i=0; i<(sizeof(helplines) / sizeof(helplines[0])); i++)
 		{
-			printf(helplines[i].line);
+			helplines[i].Print();
 		}
+		printf("\n");
+		printf("You only need to specify the NDS filename once if you want to perform multiple actions.\n");
+		printf("Actions are performed in the specified order.\n");
+		printf("Addresses can be prefixed with '0x' to use hexadecimal format.\n");
 	}
 }
 
@@ -301,8 +306,8 @@ int main(int argc, char *argv[])
 					REQUIRED(logofilename);
 					break;
 
-				case 'h':	// load header
-					REQUIRED(headerfilename);
+				case 'h':	// load header or header size
+					REQUIRED(headerfilename_or_size);
 					break;
 
 				/*case 'u':	// unique ID file
@@ -441,7 +446,7 @@ int main(int argc, char *argv[])
 				if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C, true);
 				if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
 				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
-				if (headerfilename) Extract(headerfilename, false, 0x0, false, 0x200);
+				if (headerfilename_or_size) Extract(headerfilename_or_size, false, 0x0, false, 0x200);
 				if (logofilename) Extract(logofilename, false, 0xC0, false, 156);	// *** bin only
 				if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
 				if (arm7ovltablefilename) Extract(arm7ovltablefilename, true, 0x58, true, 0x5C);
@@ -450,8 +455,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case ACTION_CREATE:
-				//if (+ 0x800) compatibility = true;
-				/*status =*/ Create();
+				Create();
 				break;
 
 			case ACTION_PASSME:

@@ -48,7 +48,7 @@ extern char *bannerfilename;
 extern char *bannertext;
 extern int bannertype;
 //extern bool compatibility;
-extern char *headerfilename;
+extern char *headerfilename_or_size;
 extern char *uniquefilename;
 extern char *logofilename;
 extern unsigned int arm9RamAddress;

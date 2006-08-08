@@ -16,9 +16,9 @@ unsigned int free_file_id = 0;		// incremented in AddDirectory
 /*
  * ReadDirectory
  * Read directory tree into memory structure
- * returns last directory entry
+ * returns first (dummy) node
  */
-Tree *ReadDirectory(Tree *tree, char *path)
+TreeNode *ReadDirectory(TreeNode *node, char *path)
 {
 	//printf("%s\n", path);
 
@@ -42,20 +42,18 @@ Tree *ReadDirectory(Tree *tree, char *path)
 
 		//if (S_ISDIR(st.st_mode) && !subdirs) continue;		// skip subdirectories
 
-		tree->next = new Tree();
-		tree = tree->next;
-		tree->name = strdup(de->d_name);
 		total_name_size += strlen(de->d_name);
 
 		if (S_ISDIR(st.st_mode))
 		{
-			tree->dir_id = free_dir_id++;
-			tree->directory = new Tree();
+			node = node->New(de->d_name, true);
+			node->dir_id = free_dir_id++;
 			directory_count++;
-			ReadDirectory(tree->directory, strbuf);
+			node->directory = ReadDirectory(new TreeNode(), strbuf);
 		}
 		else if (S_ISREG(st.st_mode))
 		{
+			node = node->New(de->d_name, false);
 			file_count++;
 		}
 		else
@@ -65,7 +63,7 @@ Tree *ReadDirectory(Tree *tree, char *path)
 		}
 	}
 	closedir(dir);
-	
-	return tree;
-}
 
+	while (node->prev) node = node->prev;	// return first
+	return node;
+}

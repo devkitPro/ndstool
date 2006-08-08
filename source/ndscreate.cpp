@@ -203,10 +203,10 @@ void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id
  * AddDirectory
  * Walks the tree and adds files to NDS
  */
-void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned int _parent_id)
+void AddDirectory(TreeNode *node, char *prefix, unsigned int this_dir_id, unsigned int _parent_id)
 {
 	// skip dummy node
-	tree = tree->next;
+	node = node->next;
 
 	if (verbose) printf("%s\n", prefix);
 
@@ -228,7 +228,7 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 		fseek(fNDS, header.fnt_offset + _entry_start, SEEK_SET);
 
 		// write filenames
-		for (Tree *t=tree; t; t=t->next)
+		for (TreeNode *t=node; t; t=t->next)
 		{
 			if (!t->directory)
 			{
@@ -243,7 +243,7 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 		}
 
 		// write directorynames
-		for (Tree *t=tree; t; t=t->next)
+		for (TreeNode *t=node; t; t=t->next)
 		{
 			if (t->directory)
 			{
@@ -265,19 +265,19 @@ void AddDirectory(Tree *tree, char *prefix, unsigned int this_dir_id, unsigned i
 	}
 
 	// add files
-	unsigned int file_id = _top_file_id;
-	for (Tree *t=tree; t; t=t->next)
+	unsigned int local_file_id = _top_file_id;
+	for (TreeNode *t=node; t; t=t->next)
 	{
 		//printf("*2* %s\n", t->name);
 
 		if (!t->directory)
 		{
-			AddFile(filerootdir, prefix, t->name, file_id++);
+			AddFile(filerootdir, prefix, t->name, local_file_id++);
 		}
 	}
 
 	// add subdirectories
-	for (Tree *t=tree; t; t=t->next)
+	for (TreeNode *t=node; t; t=t->next)
 	{
 		//printf("*2* %s\n", t->name);
 
@@ -300,7 +300,9 @@ void Create()
 	fNDS = fopen(ndsfilename, "wb");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 
-	bool addSecureSyscallsDummy = false;
+	bool bSecureSyscalls = false;
+	char *headerfilename = (headerfilename_or_size && (strtoul(headerfilename_or_size,0,0) == 0)) ? headerfilename_or_size : 0;
+	u32 headersize = headerfilename_or_size ? strtoul(headerfilename_or_size,0,0) : 0x200;
 
 	// initial header data
 	if (headerfilename)
@@ -310,22 +312,24 @@ void Create()
 		if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", headerfilename); exit(1); }
 		fread(&header, 1, 0x200, fi);
 		fclose(fi);
+		
+		if ((header.arm9_ram_address + 0x800 == header.arm9_entry_address) || (header.rom_header_size > 0x200))
+		{
+			bSecureSyscalls = true;
+		}
 	}
-	else	// set header default values for homebrew
+	else	// set header default values
 	{
 		// clear header
 		memset(&header, 0, 0x200);
 		memcpy(header.gamecode, "####", 4);
 
-		if (arm9RamAddress + 0x800 == arm9Entry)
+		if ((arm9RamAddress + 0x800 == arm9Entry) || (headersize > 0x200))
 		{
-			addSecureSyscallsDummy = true;
-			header.rom_header_size = 0x4000;
-			memcpy(((unsigned char *)&header) + 0xC0, nintendo_logo, sizeof(nintendo_logo));
+			bSecureSyscalls = true;
 		}
 		else
 		{
-			header.rom_header_size = 0x200;
 			header.reserved2 = 0x04;		// autostart
 			*(unsigned_int *)(((unsigned char *)&header) + 0x0) = 0xEA00002E;		// for PassMe's that start @ 0x08000000
 		}
@@ -333,6 +337,8 @@ void Create()
 		*(unsigned_int *)(((unsigned char *)&header) + 0x64) = 1<<29 | latency2<<16 | latency1;	// ROM control info 2
 		*(unsigned_short *)(((unsigned char *)&header) + 0x6E) = 0x051E;	// ROM control info 3
 	}
+	if (headersize) header.rom_header_size = headersize;
+	if (header.rom_header_size == 0) header.rom_header_size = bSecureSyscalls ? 0x4000 : 0x200;
 
 	// load a logo
 	if (logofilename)
@@ -353,39 +359,17 @@ void Create()
 			fclose(fi);
 		}
 	}
-	else if (!headerfilename)	// add small NDS loader
+	else if (bSecureSyscalls)	// use Nintendo logo
+	{
+		memcpy(((unsigned char *)&header) + 0xC0, nintendo_logo, sizeof(nintendo_logo));
+	}
+	else	// add small NDS loader
 	{
 		if (loadme_size != 156) { fprintf(stderr, "loadme size error\n"); exit(1); }
 		memcpy(header.logo, loadme, loadme_size);		// self-contained NDS loader for *Me GBA cartridge boot
 		memcpy(&header.offset_0xA0, "SRAM_V110", 9);		// allow GBA cartridge SRAM backup
 		memcpy(&header.offset_0xAC, "PASS01\x96", 7);		// automatically start with FlashMe, make it look more like a GBA rom
 	}
-
-/*	// unique ID... just for homebrew, not very used... obsolete?
-	if (uniquefilename)
-	{
-		unsigned_int id[2];
-		FILE *f = fopen(uniquefilename, "rb");
-		if (f)
-		{
-			fread(&id[0], sizeof(id[0]), 1, f);
-			fread(&id[1], sizeof(id[1]), 1, f);
-		}
-		else
-		{
-			f = fopen(uniquefilename, "wb");
-			if (!f) { fprintf(stderr, "Cannot open file '%s'.\n", uniquefilename); exit(1); }
-			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[1] ^ VER[3] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm9_size);
-			id[0] = (rand()<<15) ^ rand() ^ header.arm7_size;
-			for (char *p=ndsfilename; *p; p++) srand(*p ^ VER[0] ^ VER[2] ^ (rand()<<30) ^ (rand()<<15) ^ rand() ^ time(0) ^ header.arm7_size);
-			fwrite(&id[0], sizeof(id[0]), 1, f);
-			id[1] = (rand()<<30) ^ (rand()<<15) ^ rand() ^ header.arm9_size;
-			fwrite(&id[1], sizeof(id[1]), 1, f);
-		}
-		fclose(f);
-		header.offset_0x78 = id[0];
-		header.offset_0x7C = id[1];
-	}*/
 
 	// override default title/game/maker codes
 	if (title) strncpy(header.title, title, 12);
@@ -402,18 +386,30 @@ void Create()
 		header.arm9_rom_offset = (ftell(fNDS) + arm9_align) &~ arm9_align;
 		fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
 
-		// dummy area for secure syscalls
-		if (addSecureSyscallsDummy)
-		{
-			unsigned_int x = 0xE7FFDEFF;
-			for (int i=0; i<0x800/4; i++) fwrite(&x, sizeof(x), 1, fNDS);
-		}
-
 		unsigned int entry_address = arm9Entry ? arm9Entry : (unsigned int)header.arm9_entry_address;		// template
 		unsigned int ram_address = arm9RamAddress ? arm9RamAddress : (unsigned int)header.arm9_ram_address;		// template
 		if (!ram_address && entry_address) ram_address = entry_address;
 		if (!entry_address && ram_address) entry_address = ram_address;
 		if (!ram_address) { ram_address = entry_address = 0x02000000; }
+
+		// add dummy area for secure syscalls
+		header.arm9_size = 0;
+		if (bSecureSyscalls)
+		{
+			unsigned_int x;
+			FILE *fARM9 = fopen(arm9filename, "rb");
+			if (fARM9)
+			{
+				fread(&x, sizeof(x), 1, fARM9);
+				fclose(fARM9);
+				if (x != 0xE7FFDEFF)	// not already exist?
+				{
+					x = 0xE7FFDEFF;
+					for (int i=0; i<0x800/4; i++) fwrite(&x, sizeof(x), 1, fNDS);
+					header.arm9_size = 0x800;
+				}
+			}
+		}
 
 		unsigned int size = 0;
 #if 0
@@ -424,7 +420,7 @@ void Create()
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
-		header.arm9_size = ((size + 3) &~ 3) + (addSecureSyscallsDummy ? 0x800 : 0);
+		header.arm9_size = header.arm9_size + ((size + 3) &~ 3);
 	}
 	else
 	{
@@ -507,10 +503,14 @@ void Create()
 	//if (filerootdir || overlaydir)
 	{
 		// read directory structure
-		Tree *filetree = new Tree();		// dummy root node 0xF000
+		free_file_id = overlay_files;
 		free_dir_id++;
 		directory_count++;
-		if (filerootdir) ReadDirectory(filetree, filerootdir);	// fill empty directory
+		TreeNode *filetree;
+		if (filerootdir)
+			filetree = ReadDirectory(new TreeNode(), filerootdir);
+		else
+			filetree = new TreeNode();		// dummy root node 0xF000
 
 		// calculate offsets required for FNT and FAT
 		_entry_start = 8*directory_count;		// names come after directory structs
@@ -548,14 +548,15 @@ void Create()
 
 		file_end = file_top;	// no file data as yet
 
-		// add overlay files
+		// add (hidden) overlay files
 		for (unsigned int i=0; i<overlay_files; i++)
 		{
-			char s[32]; sprintf(s, OVERLAY_FMT, free_file_id);
-			AddFile(overlaydir, "/", s, free_file_id);
-			free_file_id++;		// incremented up to overlay_files
+			char s[32]; sprintf(s, OVERLAY_FMT, i/*free_file_id*/);
+			AddFile(overlaydir, "/", s, i/*free_file_id*/);
+			//free_file_id++;		// incremented up to overlay_files
 		}
 
+		// add all other (visible) files
 		AddDirectory(filetree, "/", 0xF000, directory_count);
 		fseek(fNDS, file_end, SEEK_SET);
 
@@ -569,10 +570,14 @@ void Create()
 
 	// --------------------------
 
+	// align file size
 	unsigned int newfilesize = file_end;	//ftell(fNDS);
 	newfilesize = (newfilesize + 3) &~ 3;	// align to 4 bytes
 	header.application_end_offset = newfilesize;
+	fseek(fNDS, newfilesize-1, SEEK_SET); int c = fgetc(fNDS);
+	fseek(fNDS, newfilesize-1, SEEK_SET); fputc((c >= 0) ? c : 0, fNDS);
 
+	// calculate device capacity
 	newfilesize |= newfilesize >> 16; newfilesize |= newfilesize >> 8;
 	newfilesize |= newfilesize >> 4; newfilesize |= newfilesize >> 2;
 	newfilesize |= newfilesize >> 1; newfilesize++;
@@ -581,10 +586,6 @@ void Create()
 	unsigned int x = newfilesize;
 	while (x != 0) { x >>= 1; devcap++; }
 	header.devicecap = (devcap < 0) ? 0 : devcap;
-
-	// pad file
-	fseek(fNDS, newfilesize-1, SEEK_SET); int c = fgetc(fNDS);
-	fseek(fNDS, newfilesize-1, SEEK_SET); fputc((c >= 0) ? c : 0, fNDS);
 
 	// fix up header CRCs and write header
 	header.logo_crc = CalcLogoCRC(header);
