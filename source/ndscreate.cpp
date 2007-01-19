@@ -456,7 +456,7 @@ void Create()
 		unsigned int ram_address = arm7RamAddress ? arm7RamAddress : (unsigned int)header.arm7_ram_address;		// template
 		if (!ram_address && entry_address) ram_address = entry_address;
 		if (!entry_address && ram_address) entry_address = ram_address;
-		if (!ram_address) { ram_address = entry_address = 0x03800000; }
+		if (!ram_address) { ram_address = entry_address = 0x037f8000; }
 
 		unsigned int size = 0;
 #if 0
@@ -473,8 +473,8 @@ void Create()
 	else	// default ARM7 binary
 	{
 		fwrite(default_arm7, 1, default_arm7_size, fNDS);
-		header.arm7_entry_address = 0x03800000;
-		header.arm7_ram_address = 0x03800000;
+		header.arm7_entry_address = 0x037f8000;
+		header.arm7_ram_address = 0x037f8000;
 		header.arm7_size = ((default_arm7_size + 3) & ~3);
 	}
 
