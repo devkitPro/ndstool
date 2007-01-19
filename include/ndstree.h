@@ -27,7 +27,7 @@ struct TreeNode
 		TreeNode *newNode = new TreeNode();
 		newNode->name = strdup(name);
 
-		TreeNode *node = this, *node1 = 0;
+		TreeNode *node = this;
 
 		if (cmp(name, isdir, node->name, node->dir_id) < 0)	// prev
 		{
