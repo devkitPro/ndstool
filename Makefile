@@ -81,10 +81,9 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 			$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
 			$(CURDIR)/DefaultArm7 $(CURDIR)/Loader
 
-export CC	:=	$(PREFIX)gcc
-export CXX	:=	$(PREFIX)g++
-export AR	:=	$(PREFIX)ar
-export OBJCOPY	:=	$(PREFIX)objcopy
+export CC	:=	gcc
+export CXX	:=	g++
+export AR	:=	ar
 
 #---------------------------------------------------------------------------------
 # automatically build a list of object files for our project
