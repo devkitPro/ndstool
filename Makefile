@@ -131,10 +131,10 @@ $(BUILD):
 PassMeIncludes: $(BUILD)/passme_vhd1.h $(BUILD)/passme_vhd2.h
 
 $(BUILD)/passme_vhd1.h: $(SOURCES)/passme.vhd
-	cat $< | gawk '/^--!/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (!COND) print "\"" $$0 "\\n\"" }' > $@
+	cat $< | $(GAWK) '/^--!/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (!COND) print "\"" $$0 "\\n\"" }' > $@
 
 $(BUILD)/passme_vhd2.h: $(SOURCES)/passme.vhd
-	cat $< | gawk '/^--!/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (COND) print "\"" $$0 "\\n\"" }' > $@
+	cat $< | $(GAWK) '/^--!/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (COND) print "\"" $$0 "\\n\"" }' > $@
 
 #---------------------------------------------------------------------------------
 clean:
