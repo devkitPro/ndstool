@@ -15,12 +15,15 @@ BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 DATA		:=	data
+VERSION		:=	1.33
 
 export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
 DEBUGFLAGS	:=
+
+GAWK	?=	awk
 
 
 UNAME := $(shell uname -s)
@@ -42,16 +45,23 @@ ifneq (,$(findstring MINGW,$(UNAME)))
 	EXEEXT		:= .exe
 	CFLAGS		+= -mno-cygwin
 	LDFLAGS		+= -mno-cygwin -s
+	OS	:=	win32
 endif
 
 ifneq (,$(findstring CYGWIN,$(UNAME)))
 	CFLAGS		+= -mno-cygwin
 	LDFLAGS		+= -mno-cygwin -s
 	EXEEXT		:= .exe
+	OS	:=	win32
+endif
+
+ifneq (,$(findstring Darwin,$(UNAME)))
+	OS := OSX
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
-	LDFLAGS 	+= -static -s
+	LDFLAGS += -s -static
+	OS := Linux
 endif
 
 CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
@@ -117,6 +127,7 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 .PHONY: $(BUILD) clean
 
+
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
@@ -125,6 +136,8 @@ $(BUILD):
 	@make -C Loader
 	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 	@./ndstool -@ DefaultArm7/default_arm7.bin && echo For official devkitPro releases, add this SHA1 hash of default ARM7 binary to data/arm7_sha1_homebrew.bin and recompile. || echo -n
+
+all: clean $(BUILD)
 
 #---------------------------------------------------------------------------------
 .PHONY: PassMeIncludes
@@ -144,7 +157,14 @@ clean:
 	@rm -fr $(BUILD) $(OUTPUT)
 
 #---------------------------------------------------------------------------------
-all: clean $(BUILD)
+
+dist-src:
+	@tar --exclude=*CVS* -cvjf ndstool-src-$(VERSION).tar.bz2 data defaultARM7 include loader source Makefile 
+
+dist-bin: all
+	@tar -cjvf ndstool-$(VERSION)-$(OS).tar.bz2 $(TARGET)$(EXEEXT)
+
+dist: dist-src dist-bin
 
 #---------------------------------------------------------------------------------
 run: $(OUTPUT)
@@ -169,6 +189,12 @@ $(OUTPUT): $(OFILES)
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
 #---------------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------------
+ndstool.o : ndstool.cpp $(OUTPUTDIR)/Makefile
+	@echo $(notdir $<)
+	$(CXX) -MMD -DVERSION=\"$(VERSION)\" $(CXXFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.cpp

@@ -5,7 +5,6 @@
 
 #include <unistd.h>
 #include "ndstool.h"
-#include "ndstool_version.h"
 #include "sha1.h"
 #include "ndscreate.h"
 #include "ndsextract.h"
@@ -59,7 +58,7 @@ const char CompileTime[] = __TIME__;
  */
 void Title()
 {
-	printf("Nintendo DS rom tool "VER" - %s %s by Rafael Vuijk (aka DarkFader)\n",CompileDate,CompileTime);
+	printf("Nintendo DS rom tool "VERSION" - %s %s\nby Rafael Vuijk, Dave Murphy,  Alexei Karpenko\n",CompileDate,CompileTime);
 }
 
 /*
