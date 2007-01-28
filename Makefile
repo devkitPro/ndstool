@@ -159,7 +159,7 @@ clean:
 #---------------------------------------------------------------------------------
 
 dist-src:
-	@tar --exclude=*CVS* -cvjf ndstool-src-$(VERSION).tar.bz2 data defaultARM7 include loader source Makefile 
+	@tar --exclude=*CVS* -cvjf ndstool-src-$(VERSION).tar.bz2 data DefaultArm7 include Loader source Makefile 
 
 dist-bin: all
 	@tar -cjvf ndstool-$(VERSION)-$(OS).tar.bz2 $(TARGET)$(EXEEXT)
