@@ -131,10 +131,10 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@make PassMeIncludes
-	@make -C DefaultArm7
-	@make -C Loader
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@$(MAKE) PassMeIncludes
+	@$(MAKE) -C DefaultArm7
+	@$(MAKE) -C Loader
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 	@./ndstool -@ DefaultArm7/default_arm7.bin && echo For official devkitPro releases, add this SHA1 hash of default ARM7 binary to data/arm7_sha1_homebrew.bin and recompile. || echo -n
 
 all: clean $(BUILD)
@@ -152,8 +152,8 @@ $(BUILD)/passme_vhd2.h: $(SOURCES)/passme.vhd
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@make -C DefaultArm7 clean
-	@make -C Loader clean
+	@$(MAKE) -C DefaultArm7 clean
+	@$(MAKE) -C Loader clean
 	@rm -fr $(BUILD) $(OUTPUT)
 
 #---------------------------------------------------------------------------------
