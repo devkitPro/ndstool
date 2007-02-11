@@ -7,6 +7,7 @@ Programmers:
 
 Update version in include/ndstool_version.h
 
+v1.34 - remove embedded arm7 core, read from $(DEVKITPRO)/libnds instead
 v1.32 - move default arm7 core to 0x37f8000, update embedded arm7 core
 v1.31 - Headersize option and changed the way to select this automatically. Sorting of filesystem names.
 v1.30 - Some bugfixes, alternate encryption table offsets

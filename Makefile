@@ -15,7 +15,7 @@ BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 DATA		:=	data
-VERSION		:=	1.33
+VERSION		:=	1.34
 
 export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ export AR	:=	ar
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES	:=	default_arm7.bin loadme.bin $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
+BINFILES	:=	loadme.bin $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
 BMPFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bmp)))
 
 export OFILES	:= $(BINFILES:.bin=.o) $(BMPFILES:.bmp=.o)  $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
@@ -132,10 +132,8 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) PassMeIncludes
-	@$(MAKE) -C DefaultArm7
 	@$(MAKE) -C Loader
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-	@./ndstool -@ DefaultArm7/default_arm7.bin && echo For official devkitPro releases, add this SHA1 hash of default ARM7 binary to data/arm7_sha1_homebrew.bin and recompile. || echo -n
 
 all: clean $(BUILD)
 
