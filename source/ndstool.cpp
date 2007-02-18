@@ -50,8 +50,6 @@ unsigned int arm7RamAddress = 0;
 unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
 
-const char CompileDate[] = __DATE__;
-const char CompileTime[] = __TIME__;
 
 /*
  * Title

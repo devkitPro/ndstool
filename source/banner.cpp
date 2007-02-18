@@ -35,7 +35,10 @@ void IconFromBMP()
 	int rval = bmp.LoadBMP(bannerfilename);
 	if (rval < 0) exit(1);
 
-	if (bmp.width != 32 || bmp.height != 32) { fprintf(stderr, "Image should be 32 x 32.\n"); exit(1); }
+	if (bmp.width != 32 || bmp.height != 32) {
+		fprintf(stderr, "Image should be 32 x 32.\n");
+		exit(1);
+	}
 
 	Banner banner;
 	memset(&banner, 0, sizeof(banner));
