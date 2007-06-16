@@ -470,7 +470,7 @@ void Create()
 		}
 
 		strcpy(arm7PathName,devkitProPATH);
-		strcat(arm7PathName,"/libnds/default.arm7");
+		strcat(arm7PathName,"/libnds/basic.arm7");
 		arm7filename = arm7PathName;
 	}
 	
