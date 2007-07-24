@@ -61,7 +61,6 @@ ndstool_create:
 
 
 ndstool_release: ndstool
-	upx -9 ndstool.exe
 	ndstool -c nibbles2.nds -7 arm7.bin -9 arm9.bin -d nibbles
 	ndstool -i nibbles2.nds
 
