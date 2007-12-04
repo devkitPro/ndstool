@@ -63,4 +63,3 @@ extern int latency2;
 extern int romversion;
 
 extern const char CompileDate[];
-extern const char CompileTime[];
