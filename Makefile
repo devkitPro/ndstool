@@ -15,7 +15,7 @@ BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 DATA		:=	data
-VERSION		:=	1.37
+VERSION		:=	1.38
 
 export PATH		:=	$(MINGW)/bin:$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ LIBS	:=
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
-LIBDIRS	:= /usr/local /c/cygwin/usr/local
+LIBDIRS	:= 
 
 #---------------------------------------------------------------------------------
 # no real need to edit anything past this point unless you need to add additional
