@@ -163,7 +163,7 @@ CRC_TEMPLATE void FFixCrc
 	// fix it
 	for (int i=sizeof(CrcType); i>=1; i--)
 	{
-		CrcType value;
+		CrcType value=0;
 		unsigned char index = RevCrc_(buf[i + sizeof(CrcType) - 1], &value);
 		*(CrcType *)(buf + i) ^= value;
 		buf[i - 1] ^= index;
