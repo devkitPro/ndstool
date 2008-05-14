@@ -151,7 +151,7 @@ $(BUILD)/passme_vhd2.h: $(SOURCES)/passme.vhd
 clean:
 	@echo clean ...
 	@$(MAKE) -C Loader clean
-	@rm -fr $(BUILD) $(OUTPUT)
+	@rm -fr $(BUILD) $(OUTPUT)$(EXEEXT)
 
 #---------------------------------------------------------------------------------
 
