@@ -56,7 +56,9 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 endif
 
 ifneq (,$(findstring Darwin,$(UNAME)))
-	OS := OSX
+	CFLAGS	+= -isysroot /Developer/SDKs/MacOSX10.4u.sdk
+	ARCH	:= -arch i386 -arch ppc
+	LDFLAGS += -arch i386 -arch ppc
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
@@ -190,17 +192,20 @@ $(OUTPUT): $(OFILES)
 #---------------------------------------------------------------------------------
 ndstool.o : ndstool.cpp $(OUTPUTDIR)/Makefile
 	@echo $(notdir $<)
-	$(CXX) -MMD -DVERSION=\"$(VERSION)\" $(CXXFLAGS) -o $@ -c $<
+	$(CXX) -E -MMD $(CFLAGS) $< > /dev/null
+	$(CXX) -DVERSION=\"$(VERSION)\" $(CXXFLAGS) $(ARCH) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.cpp
 	@echo $(notdir $<)
-	@$(CXX) -MMD $(CXXFLAGS) -o $@ -c $<
+	$(CXX) -E -MMD $(CFLAGS) $< > /dev/null
+	$(CXX) $(CFLAGS) $(ARCH) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.c
 	@echo $(notdir $<)
-	@$(CC) -MMD $(CFLAGS) -o $@ -c $<
+	$(CC) -E -MMD $(CFLAGS) $< > /dev/null
+	$(CC) $(CFLAGS) $(ARCH) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.s
