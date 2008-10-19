@@ -16,7 +16,7 @@ struct TreeNode
 	TreeNode()
 	{
 		dir_id = 0;
-		name = "";
+		name = (char *)"";
 		directory = 0;
 		prev = next = 0;
 	}

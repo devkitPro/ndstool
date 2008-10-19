@@ -44,10 +44,10 @@ ThumbCode:
 	str	r4, [r7, #0x24]				@ go to new loop
 
 	@ copy header
-	mov	r0, r6
-	mov	r1, r7
-	ldr	r2, =0x1F0				@ do not overwrite new ARM9 loop
-	bl	Copy
+	@mov	r0, r6
+	@mov	r1, r7
+	@ldr	r2, =0x1F0				@ do not overwrite new ARM9 loop
+	@bl	Copy
 
 	@ copy ARM9 binary
 	ldr	r0, [r6, #0x20]				@ ROM offset
