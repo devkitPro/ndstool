@@ -251,8 +251,8 @@ void Extract(char *outfilename, bool indirect_offset, unsigned int offset, bool 
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 	fread(&header, 512, 1, fNDS);
 
-	if (indirect_offset) offset = *((unsigned int *)&header + offset/4);
-	if (indirect_size) size = *((unsigned int *)&header + size/4);
+	if (indirect_offset) offset = *((unsigned_int *)&header + offset/4);
+	if (indirect_size) size = *((unsigned_int *)&header + size/4);
 	
 	fseek(fNDS, offset, SEEK_SET);
 
