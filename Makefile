@@ -34,12 +34,6 @@ CFLAGS	+=	$(INCLUDE)
 
 LDFLAGS	=	$(DEBUGFLAGS)
 
-ifneq (,$(findstring Darwin,$(UNAME)))
-        LDFLAGS         +=
-endif
-
-
-
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM	:= win32
 	EXEEXT		:= .exe
