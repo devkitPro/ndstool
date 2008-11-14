@@ -583,9 +583,10 @@ void Create()
 	unsigned int newfilesize = file_end;	//ftell(fNDS);
 	newfilesize = (newfilesize + 3) &~ 3;	// align to 4 bytes
 	header.application_end_offset = newfilesize;
-	fseek(fNDS, newfilesize-1, SEEK_SET); int c = fgetc(fNDS);
-	fseek(fNDS, newfilesize-1, SEEK_SET); fputc((c >= 0) ? c : 0, fNDS);
-
+	if (newfilesize != file_end ) {
+		fseek(fNDS, newfilesize-1, SEEK_SET);
+		fputc(0, fNDS);
+	}
 	// calculate device capacity
 	newfilesize |= newfilesize >> 16; newfilesize |= newfilesize >> 8;
 	newfilesize |= newfilesize >> 4; newfilesize |= newfilesize >> 2;
