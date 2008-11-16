@@ -581,7 +581,7 @@ void Create()
 
 	// align file size
 	unsigned int newfilesize = file_end;	//ftell(fNDS);
-	newfilesize = (newfilesize + 3) &~ 3;	// align to 4 bytes
+	newfilesize = (newfilesize + 3) & ~3;	// align to 4 bytes
 	header.application_end_offset = newfilesize;
 	if (newfilesize != file_end ) {
 		fseek(fNDS, newfilesize-1, SEEK_SET);
