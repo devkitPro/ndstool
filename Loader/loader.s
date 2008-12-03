@@ -21,19 +21,6 @@ _start:
 	.thumb
 ThumbCode:
 
-@	@ clear RAM
-@	mov	r0, #0
-@	mov	r1, #0
-@	mov	r2, #0
-@	mov	r3, #0
-@	ldr	r4, =0x02000000
-@	ldr	r5, =0x023FF000
-@1:
-@	stmia	r4!, {r0-r3}
-@	cmp	r4, r5
-@	bne	1b
-
-	@
 	ldr	r7, =RAM_HEADER
 
 	@ copy new ARM9 loop
@@ -44,10 +31,10 @@ ThumbCode:
 	str	r4, [r7, #0x24]				@ go to new loop
 
 	@ copy header
-	@mov	r0, r6
-	@mov	r1, r7
-	@ldr	r2, =0x1F0				@ do not overwrite new ARM9 loop
-	@bl	Copy
+	mov	r0, r6
+	mov	r1, r7
+	ldr	r2, =0x1F0				@ do not overwrite new ARM9 loop
+	bl	Copy
 
 	@ copy ARM9 binary
 	ldr	r0, [r6, #0x20]				@ ROM offset
