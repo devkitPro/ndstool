@@ -15,7 +15,7 @@ BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 DATA		:=	data
-VERSION		:=	1.40
+VERSION		:=	1.41
 
 export PATH		:=	$(MINGW)/bin:$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------

@@ -2,14 +2,14 @@
 
 struct OverlayEntry
 {
-	unsigned int id;
-	unsigned int ram_address;
-	unsigned int ram_size;
-	unsigned int bss_size;
-	unsigned int sinit_init;
-	unsigned int sinit_init_end;
-	unsigned int file_id;
-	unsigned int reserved;
+	unsigned_int id;
+	unsigned_int ram_address;
+	unsigned_int ram_size;
+	unsigned_int bss_size;
+	unsigned_int sinit_init;
+	unsigned_int sinit_init_end;
+	unsigned_int file_id;
+	unsigned_int reserved;
 };
 
 #pragma pack()
