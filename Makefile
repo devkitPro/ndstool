@@ -28,7 +28,7 @@ GAWK	?=	awk
 
 UNAME := $(shell uname -s)
 
-CFLAGS	:=	$(DEBUGFLAGS) -Wall -O3
+CFLAGS	:=	$(DEBUGFLAGS) -Wall -O2
 CFLAGS	+=	$(INCLUDE)
 
 
@@ -50,8 +50,7 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 endif
 
 ifneq (,$(findstring Darwin,$(UNAME)))
-	CFLAGS	+= -isysroot /Developer/SDKs/MacOSX10.4u.sdk
-	ARCH	:= -arch i386 -arch ppc
+	OSXCFLAGS	:= -O -mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
 	LDFLAGS += -arch i386 -arch ppc
 endif
 
@@ -187,19 +186,19 @@ $(OUTPUT): $(OFILES)
 ndstool.o : ndstool.cpp $(OUTPUTDIR)/Makefile
 	@echo $(notdir $<)
 	$(CXX) -E -MMD $(CFLAGS) $< > /dev/null
-	$(CXX) -DVERSION=\"$(VERSION)\" $(CXXFLAGS) $(ARCH) -o $@ -c $<
+	$(CXX) -DVERSION=\"$(VERSION)\" $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.cpp
 	@echo $(notdir $<)
 	$(CXX) -E -MMD $(CFLAGS) $< > /dev/null
-	$(CXX) $(CFLAGS) $(ARCH) -o $@ -c $<
+	$(CXX) $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.c
 	@echo $(notdir $<)
 	$(CC) -E -MMD $(CFLAGS) $< > /dev/null
-	$(CC) $(CFLAGS) $(ARCH) -o $@ -c $<
+	$(CC) $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.s
