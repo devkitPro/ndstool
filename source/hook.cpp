@@ -2,7 +2,7 @@
 // make && cp ASNE.nds 1.nds && ndstool -v -i -k -i 1.nds -7 c:\work\ds\dummyhook\dummyhook.bin | grep CRC32
 // C:\work\DS\buildscripts\tools\nds\ndstool>make && cp submarine_tech_demo_e3_2005.nds 1.nds && ndstool -v -i -T 1.nds -i -7 c:\work\ds\dummyhook\dummyhook.bin
 
-#include <ndstool.h>
+#include "ndstool.h"
 #include "crc.h"
 
 /*

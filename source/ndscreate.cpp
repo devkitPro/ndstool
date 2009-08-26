@@ -1,5 +1,5 @@
 #include <time.h>
-#include <ndstool.h>
+#include "ndstool.h"
 #include "logo.h"
 #include "raster.h"
 #include "banner.h"

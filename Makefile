@@ -15,13 +15,13 @@ BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 DATA		:=	data
-VERSION		:=	1.41
+VERSION		:=	1.43
 
-export PATH		:=	$(MINGW)/bin:$(DEVKITARM)/bin:$(PATH)
+export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-DEBUGFLAGS	:=
+DEBUGFLAGS	:= -g
 
 GAWK	?=	awk
 
@@ -50,8 +50,10 @@ ifneq (,$(findstring CYGWIN,$(UNAME)))
 endif
 
 ifneq (,$(findstring Darwin,$(UNAME)))
-	OSXCFLAGS	:= -O -mmacosx-version-min=10.4 -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
-	LDFLAGS += -arch i386 -arch ppc
+	SDK	:=	/Developer/SDKs/MacOSX10.4u.sdk
+	OSXCFLAGS	:= -O -mmacosx-version-min=10.4 -isysroot $(SDK) -arch i386 -arch ppc
+	export MACOSX_DEPLOYMENT_TARGET	:=	10.4
+	LDFLAGS += "-arch i386 -arch ppc -Wl,-syslibroot,$(SDK)"
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
@@ -114,7 +116,7 @@ else
 endif
 #---------------------------------------------------------------------------------
 
-export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-iquote $(CURDIR)/$(dir)) \
 			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 			-I$(CURDIR)/$(BUILD)
 
@@ -199,12 +201,6 @@ ndstool.o : ndstool.cpp $(OUTPUTDIR)/Makefile
 	@echo $(notdir $<)
 	$(CC) -E -MMD $(CFLAGS) $< > /dev/null
 	$(CC) $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
-
-#---------------------------------------------------------------------------------
-%.o : %.s
-	@echo $(notdir $<)
-	@$(CC) -MMD $(ASFLAGS) -o $@ -c $<
-
 
 #---------------------------------------------------------------------------------
 %.c	:	%.bmp

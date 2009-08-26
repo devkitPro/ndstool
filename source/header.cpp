@@ -194,6 +194,8 @@ void ShowHeaderInfo(Header &header, int romType, unsigned int length = 0x200)
 	printf("0x7C\t%-25s\t0x%08X\n", "Magic 2", (int)header.offset_0x7C);
 	printf("0x80\t%-25s\t0x%08X\n", "Application end offset", (int)header.application_end_offset);
 	printf("0x84\t%-25s\t0x%08X\n", "ROM header size", (int)header.rom_header_size);
+
+
 	for (unsigned int i=0x88; i<0xC0; i+=4)
 	{
 		unsigned_int &x = ((unsigned_int *)&header)[i/4];
@@ -203,11 +205,25 @@ void ShowHeaderInfo(Header &header, int romType, unsigned int length = 0x200)
 	printf("0x15C\t%-25s\t0x%04X (%s)\n", "Logo CRC", (int)header.logo_crc, (logo_crc == header.logo_crc) ? "OK" : "INVALID");
 	unsigned short header_crc = CalcHeaderCRC(header);
 	printf("0x15E\t%-25s\t0x%04X (%s)\n", "Header CRC", (int)header.header_crc, (header_crc == header.header_crc) ? "OK" : "INVALID");
+
 	for (unsigned int i=0x160; i<length; i+=4)
 	{
 		unsigned_int &x = ((unsigned_int *)&header)[i/4];
 		if (x != 0) printf("0x%02X\t%-25s\t0x%08X\n", i, "?", (int)x);
 	}
+
+	if (header.unitcode == 2 || header.unitcode == 3) {
+		printf("0x1C0\t%-25s\t0x%X\n", "DSi9 ROM offset", (int)header.dsi9_rom_offset);
+		printf("0x1C4\t%-25s\t0x%X\n", "DSi9 entry address", (int)header.dsi9_entry_address);
+		printf("0x1C8\t%-25s\t0x%X\n", "DSi9 RAM address", (int)header.dsi9_ram_address);
+		printf("0x1CC\t%-25s\t0x%X\n", "DSi9 code size", (int)header.dsi9_size);
+		printf("0x1D0\t%-25s\t0x%X\n", "DSi7 ROM offset", (int)header.dsi7_rom_offset);
+		printf("0x1D4\t%-25s\t0x%X\n", "DSi7 entry address", (int)header.dsi7_entry_address);
+		printf("0x1D8\t%-25s\t0x%X\n", "DSi7 RAM address", (int)header.dsi7_ram_address);
+		printf("0x1DC\t%-25s\t0x%X\n", "DSi7 code size", (int)header.dsi7_size);	
+	}
+//	printf("%04X\n",(u32)&header.dsi9_rom_offset - (u32)header);
+
 }
 
 /*

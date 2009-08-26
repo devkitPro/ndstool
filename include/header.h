@@ -64,7 +64,18 @@ struct Header
 	unsigned_int offset_0x164;
 	unsigned_int offset_0x168;
 	unsigned_int offset_0x16C;
-	unsigned char zero[0x90];
+	unsigned char zero[0x40];
+	u8 regionmask;
+	u8 h1B1[0x0E];
+	u8 appflags;
+	unsigned_int dsi9_rom_offset;
+	unsigned_int dsi9_entry_address;
+	unsigned_int dsi9_ram_address;
+	unsigned_int dsi9_size;
+	unsigned_int dsi7_rom_offset;
+	unsigned_int dsi7_entry_address;
+	unsigned_int dsi7_ram_address;
+	unsigned_int dsi7_size; 
 };
 
 #pragma pack()
