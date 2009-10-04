@@ -15,7 +15,7 @@ BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include
 DATA		:=	data
-VERSION		:=	1.43
+VERSION		:=	1.45
 
 export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------

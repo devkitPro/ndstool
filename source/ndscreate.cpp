@@ -6,6 +6,7 @@
 #include "overlay.h"
 #include "loadme.h"
 #include "ndstree.h"
+#include "elf.h"
 
 unsigned int arm9_align = 0x1FF;
 unsigned int arm7_align = 0x1FF;
@@ -75,75 +76,6 @@ int CopyFromBin(char *binFilename, unsigned int *size = 0, unsigned int *size_wi
 	fclose(fi);
 	return 0;
 }
-
-/*
- * CopyFromElf
- */
-#if 0
-int CopyFromElf(char *elfFilename, unsigned int *entry, unsigned int *ram_address, unsigned int *size)
-{
-	int fd = open(elfFilename, O_RDONLY);
-	if (fd < 0) { fprintf(stderr, "Cannot open file '%s'.\n", elfFilename); exit(1); }
-	if (elf_version(EV_CURRENT) == EV_NONE) { fprintf(stderr, "libelf out of date!\n"); exit(1); }
-	Elf *elf;
-	if ((elf = elf_begin(fd, ELF_C_READ, 0)) == 0) { fprintf(stderr, "Cannot open ELF file!\n"); exit(1); }
-	Elf32_Ehdr *ehdr;
-	if ((ehdr = elf32_getehdr(elf)) == 0) { fprintf(stderr, "Cannot read ELF header!\n"); exit(1); }
-	if (ehdr->e_machine != EM_ARM) { fprintf(stderr, "Not an ARM ELF file!\n"); exit(1); }
-
-	*entry = ehdr->e_entry;
-	*size = 0;
-	*ram_address = 0;
-//	printf("entry = 0x%X\n", ehdr->e_entry);
-
-    Elf_Scn *scn = elf_getscn(elf, 0);
-	Elf32_Shdr *shdr = elf32_getshdr(scn);
-    while (shdr)
-    {
-		if (shdr->sh_flags & SHF_ALLOC)
-		{
-/*			char *name;
-			if (!(name = elf_strptr(elf, ehdr->e_shstrndx, shdr->sh_name))) name = "???";
-	    	printf("%s\n", name);*/
-
-			if (!*ram_address) *ram_address = shdr->sh_addr;		// use first address (assume it's .text)
-
-// don't mind the garbage here
-
-//			printf("sh_addr=0x%X sh_offset=0x%X sh_size=0x%X sh_link=%u sh_entsize=%u sh_addralign=%u\n", shdr->sh_addr, shdr->sh_offset, shdr->sh_size, shdr->sh_link, shdr->sh_entsize, shdr->sh_addralign);
-			//    Elf32_Word		sh_name;
-			//    Elf32_Word		sh_type;
-			//    Elf32_Word		sh_flags;
-			//    Elf32_Addr		sh_addr;
-			//    Elf32_Off		sh_offset;
-			//    Elf32_Word		sh_size;
-			//    Elf32_Word		sh_link;
-			//    Elf32_Word		sh_info;
-			//    Elf32_Word		sh_addralign;
-			//    Elf32_Word		sh_entsize;
-
-			Elf_Data *data;
-			if ((data = elf_getdata(scn, NULL)))
-			{
-		    	/*for (int i=0; i<data->d_size; i++)
-		    	{
-					printf("%02X ", ((unsigned char *)data->d_buf)[i]);
-		    	}
-		    	printf("\n");*/
-		    	fwrite(data->d_buf, 1, data->d_size, fNDS);
-				*size += data->d_size;
-			}
-		}
-
-		scn = elf_nextscn(elf, scn);
-		shdr = elf32_getshdr(scn);
-    }
-
-	elf_end(elf);
-
-	return 0;
-}
-#endif
 
 /*
  * AddFile
@@ -411,11 +343,10 @@ void Create()
 		}
 
 		unsigned int size = 0;
-#if 0
+
 		if (HasElfExtension(arm9filename))
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
 		else
-#endif
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
@@ -470,7 +401,7 @@ void Create()
 		}
 
 		strcpy(arm7PathName,devkitProPATH);
-		strcat(arm7PathName,"/libnds/default.arm7");
+		strcat(arm7PathName,"/libnds/default.elf");
 		arm7filename = arm7PathName;
 	}
 	
@@ -481,7 +412,11 @@ void Create()
 	if (!ram_address) { ram_address = entry_address = 0x037f8000; }
 
 	unsigned int size = 0;
-	CopyFromBin(arm7filename, &size);
+
+	if (HasElfExtension(arm7filename))
+		CopyFromElf(arm7filename, &entry_address, &ram_address, &size);
+	else
+		CopyFromBin(arm7filename, &size);
 
 	header.arm7_entry_address = entry_address;
 	header.arm7_ram_address = ram_address;
