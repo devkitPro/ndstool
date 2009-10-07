@@ -217,7 +217,7 @@ void ExtractFiles(char *ndsfilename)
 		{
 			fread(&overlayEntry, 1, sizeof(overlayEntry), fNDS);
 			int file_id = overlayEntry.file_id;
-			char s[32]; sprintf(s, OVERLAY_FMT, file_id);
+			char s[32]; sprintf(s, OVERLAY_FMT, overlayEntry.id);
 			ExtractFile(overlaydir, "/", s, file_id);
 		}
 	}
