@@ -1,3 +1,6 @@
+#ifndef _LITTLE_H_
+#define _LITTLE_H_
+
 #pragma pack(1)
 
 #include "types.h"
@@ -109,3 +112,6 @@ struct signed_short
 };
 
 #pragma pack()
+
+#endif // _LITTLE_H_
+
