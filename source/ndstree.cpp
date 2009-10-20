@@ -28,8 +28,7 @@ TreeNode *ReadDirectory(TreeNode *node, char *path)
 	struct dirent *de;
 	while ((de = readdir(dir)))
 	{
-		if (!strcmp(de->d_name, ".")) continue;
-		if (!strcmp(de->d_name, "..")) continue;
+		if (!strncmp(de->d_name, ".", 1)) continue; // exclude all directories starting with .
 
 		char strbuf[MAXPATHLEN];
 		strcpy(strbuf, path);
