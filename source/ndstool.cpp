@@ -24,6 +24,8 @@ int filemask_num = 0;
 char *ndsfilename = 0;
 char *arm7filename = 0;
 char *arm9filename = 0;
+char *arm7ifilename = 0;
+char *arm9ifilename = 0;
 char *filerootdir = 0;
 char *overlaydir = 0;
 char *arm7ovltablefilename = 0;
@@ -267,10 +269,21 @@ int main(int argc, char *argv[])
 				case 'd': REQUIRED(filerootdir); break;
 
 				// ARM7 filename
-				case '7': REQUIRED(arm7filename); break;
-
+				case '7': 
+					if (argv[a][2] == 'i') {
+						REQUIRED(arm7ifilename);
+					} else {
+						REQUIRED(arm7filename);
+					}
+					break;
 				// ARM9 filename
-				case '9': REQUIRED(arm9filename); break;
+				case '9':
+					if (argv[a][2] == 'i') {
+						REQUIRED(arm9ifilename);
+					} else {
+						REQUIRED(arm9filename);
+					}
+					break;
 
 				// hash file
 				case '@':
@@ -442,6 +455,10 @@ int main(int argc, char *argv[])
 			case ACTION_EXTRACT:
 				if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C, true);
 				if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
+				if (header.unitcode & 2) {
+					if (arm9ifilename) Extract(arm9ifilename, true, 0x1C0, true, 0x1CC, true);
+					if (arm7ifilename) Extract(arm7ifilename, true, 0x1D0, true, 0x1DC);
+				}
 				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
 				if (headerfilename_or_size) Extract(headerfilename_or_size, false, 0x0, false, 0x200);
 				if (logofilename) Extract(logofilename, false, 0xC0, false, 156);	// *** bin only

@@ -30,6 +30,7 @@ UNAME := $(shell uname -s)
 
 CFLAGS	:=	$(DEBUGFLAGS) -Wall -O2
 CFLAGS	+=	$(INCLUDE)
+CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
 
 
 LDFLAGS	=	$(DEBUGFLAGS)
@@ -52,8 +53,10 @@ endif
 ifneq (,$(findstring Darwin,$(UNAME)))
 	SDK	:=	/Developer/SDKs/MacOSX10.4u.sdk
 	OSXCFLAGS	:= -O -mmacosx-version-min=10.4 -isysroot $(SDK) -arch i386 -arch ppc
+	OSXCXXFLAGS	:=	$(OSXCFLAGS)
+	CXXFLAGS	+=	-fvisibility=hidden
 	export MACOSX_DEPLOYMENT_TARGET	:=	10.4
-	LDFLAGS += "-arch i386 -arch ppc -Wl,-syslibroot,$(SDK)"
+	LDFLAGS += -arch i386 -arch ppc -Wl,-syslibroot,$(SDK)
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
@@ -61,7 +64,7 @@ ifneq (,$(findstring Linux,$(UNAME)))
 	OS := Linux
 endif
 
-CXXFLAGS	=	$(CFLAGS) -fno-rtti -fno-exceptions
+
 
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
@@ -177,7 +180,7 @@ DEPENDS	:=	$(OFILES:.o=.d)
 #---------------------------------------------------------------------------------
 $(OUTPUT): $(OFILES)
 	@echo linking
-	@$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $(OUTPUT)$(EXEEXT)
+	$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $(OUTPUT)$(EXEEXT)
 
 #---------------------------------------------------------------------------------
 # Compile Targets for C/C++
@@ -187,14 +190,14 @@ $(OUTPUT): $(OFILES)
 #---------------------------------------------------------------------------------
 ndstool.o : ndstool.cpp $(OUTPUTDIR)/Makefile
 	@echo $(notdir $<)
-	$(CXX) -E -MMD $(CFLAGS) $< > /dev/null
-	$(CXX) -DVERSION=\"$(VERSION)\" $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
+	$(CXX) -E -MMD $(CXXFLAGS) $< > /dev/null
+	$(CXX) -DVERSION=\"$(VERSION)\" $(OSXCXXFLAGS) $(CXXFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.cpp
 	@echo $(notdir $<)
-	$(CXX) -E -MMD $(CFLAGS) $< > /dev/null
-	$(CXX) $(OSXCFLAGS) $(CFLAGS) -o $@ -c $<
+	$(CXX) -E -MMD $(CXXFLAGS) $< > /dev/null
+	$(CXX) $(OSXCXXFLAGS) $(CXXFLAGS) -o $@ -c $<
 
 #---------------------------------------------------------------------------------
 %.o : %.c
