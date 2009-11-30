@@ -45,7 +45,7 @@ void ElfWriteZeros(size_t n, FILE *fp)
 {
   while(n--)
     if(fputc('\0', fp) == EOF)
-      die("failed to write to file");
+      die("!!failed to write to file \n");
 }
 
 /* Function:    void ElfWriteData(size_t n, FILE *fp)
@@ -63,10 +63,10 @@ void ElfWriteData(size_t n, FILE *in, FILE *out)
     c = fgetc(in);
     
     if(c == EOF)
-      die("failed to read from input file");
+      die("failed to read from input file\n");
     
     if(fputc(c, out) == EOF)
-      die("failed to write to file");
+      die("failed to write to file\n");
   }
 }
 
@@ -81,42 +81,42 @@ void ElfReadHdr(FILE *fp, Elf32_Ehdr *hdr, Elf32_Phdr **phdr)
 {
   /* Read in ELF header. */
   if(fread(hdr, 1, sizeof(Elf32_Ehdr), fp) != sizeof(Elf32_Ehdr))
-    die("failed to read ELF header");
+    die("failed to read ELF header\n");
   
   /* Check for magic number. */
   if(memcmp(&hdr->e_ident[EI_MAG0], ELF_MAGIC, 4))
-    die("invalid ELF file");
+    die("invalid ELF file\n");
   
   /* Check object type. */
   if(hdr->e_type != ET_EXEC)
-    die("object type not executable");
+    die("object type not executable\n");
   
   /* Check machine type. */
   if(hdr->e_machine != EM_ARM)
-    die("machine type not ARM");
+    die("machine type not ARM\n");
   
   /* Check ELF version. */
   if(hdr->e_version != EV_CURRENT)
-    die("invalid ELF version");
+    die("invalid ELF version\n");
   
   /* Check ELF size. */
   if(hdr->e_ehsize != sizeof(Elf32_Ehdr))
-    die("invalid ELF header size");
+    die("invalid ELF header size\n");
   
   /* Make sure there is at least one program header. */
   if(!hdr->e_phnum)
-    die("no program headers");
+    die("no program headers\n");
   
   /* Seek to program header table and read it. */
   if(fseek(fp, hdr->e_phoff, SEEK_SET))
-    die("failed to seek to program header table");
+    die("failed to seek to program header table\n");
   
   *phdr = (Elf32_Phdr*)malloc(sizeof(Elf32_Phdr) * hdr->e_phnum);
   if(!*phdr)
-    die("failed to allocate memory");
+    die("failed to allocate memory\n");
   
   if(fread(*phdr, sizeof(Elf32_Phdr), hdr->e_phnum, fp) != hdr->e_phnum)
-    die("failed to read program header table");
+    die("failed to read program header table\n");
 }
 
 /* Function:    int CopyFromElf(char *elfFilename,         unsigned int *entry,
@@ -138,7 +138,7 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
   /* Open ELF file. */
   in = fopen(elfFilename, "rb");
   if(!in)
-    die("failed to open input file");
+    die("failed to open input file\n");
   
   /* Read in header. */
   ElfReadHdr(in, &header, &p_headers);
@@ -163,7 +163,7 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
     
     /* Seek to segment offset. */
     if(fseek(in, p_headers[i].p_offset, SEEK_SET))
-      die("failed to seek to program header segment");
+      die("failed to seek to program header segment\n");
     
     /* Write file image and pad with zeros. */
     ElfWriteData(p_headers[i].p_filesz, in, fNDS);

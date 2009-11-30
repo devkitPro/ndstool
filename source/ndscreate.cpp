@@ -252,7 +252,7 @@ void Create()
 	else	// set header default values
 	{
 		// clear header
-		memset(&header, 0, 0x200);
+		memset(&header, 0, sizeof(header));
 		memcpy(header.gamecode, "####", 4);
 
 		if ((arm9RamAddress + 0x800 == arm9Entry) || (headersize > 0x200))

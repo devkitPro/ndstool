@@ -76,6 +76,14 @@ struct Header
 	unsigned_int dsi7_entry_address;
 	unsigned_int dsi7_ram_address;
 	unsigned_int dsi7_size; 
+	unsigned_int offset_0x1E0;
+	unsigned_int offset_0x1E4;
+	unsigned_int dsi_region_start;
+	unsigned_int dsi_region_size;
+	unsigned_int hash1_start;
+	unsigned_int hash1_size;
+	unsigned_int hash2_start;
+	unsigned_int hash2_size;
 };
 
 #pragma pack()

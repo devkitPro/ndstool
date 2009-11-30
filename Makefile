@@ -38,13 +38,13 @@ LDFLAGS	=	$(DEBUGFLAGS)
 ifneq (,$(findstring MINGW,$(UNAME)))
 	PLATFORM	:= win32
 	EXEEXT		:= .exe
-	CFLAGS		+= -mno-cygwin
-	LDFLAGS		+= -mno-cygwin -s
+	CFLAGS		+=
+	LDFLAGS		+= -s
 	OS	:=	win32
 endif
 
 ifneq (,$(findstring CYGWIN,$(UNAME)))
-	CFLAGS		+= -mno-cygwin
+	CXXFLAGS	+= -mno-cygwin
 	LDFLAGS		+= -mno-cygwin -s
 	EXEEXT		:= .exe
 	OS	:=	win32
