@@ -2,7 +2,7 @@
 #define _LITTLE_H_
 
 #pragma pack(1)
-
+#include <sys/param.h>
 #include "types.h"
 
 #ifndef BYTE_ORDER

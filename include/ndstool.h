@@ -5,7 +5,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
-//#include <libelf.h>
 #include "little.h"
 #include "header.h"
 
