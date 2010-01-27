@@ -52,11 +52,10 @@ endif
 
 ifneq (,$(findstring Darwin,$(UNAME)))
 	SDK	:=	/Developer/SDKs/MacOSX10.4u.sdk
-	OSXCFLAGS	:= -O -mmacosx-version-min=10.4 -isysroot $(SDK) -arch i386 -arch ppc
+	OSXCFLAGS	:= -mmacosx-version-min=10.4 -isysroot $(SDK) -arch i386 -arch ppc
 	OSXCXXFLAGS	:=	$(OSXCFLAGS)
 	CXXFLAGS	+=	-fvisibility=hidden
-	export MACOSX_DEPLOYMENT_TARGET	:=	10.4
-	LDFLAGS += -arch i386 -arch ppc -Wl,-syslibroot,$(SDK)
+	LDFLAGS += -mmacosx-version-min=10.4 -arch i386 -arch ppc -Wl,-syslibroot,$(SDK)
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
