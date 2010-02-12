@@ -453,6 +453,12 @@ int main(int argc, char *argv[])
 				break;
 
 			case ACTION_EXTRACT:
+				fNDS = fopen(ndsfilename, "rb");
+				if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
+				fread(&header, 512, 1, fNDS);
+				fclose(fNDS);
+
+			printf("9i %s, 7i %s, unitcode %x\n",arm9ifilename,arm7ifilename, header.unitcode);
 				if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C, true);
 				if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
 				if (header.unitcode & 2) {
