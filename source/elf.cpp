@@ -136,8 +136,11 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 
 	/* Open ELF file. */
 	in = fopen(elfFilename, "rb");
-	if(!in)
-		die("failed to open input file: '%s'\n",elfFilename);
+	if(!in) {
+		char errormsg[512];
+		snprintf(errormsg,512,"failed to open input file: '%s'\n",elfFilename);
+		die(errormsg);
+	}
   
 	/* Read in header. */
 	ElfReadHdr(in, &header, &p_headers);
