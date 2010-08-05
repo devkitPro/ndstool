@@ -17,3 +17,4 @@ extern const char *bannerLanguages[];
 int InsertTitleString(char *String, FILE *file);
 unsigned short CalcBannerCRC(Banner &banner);
 void IconFromBMP();
+void IconFromGRF();

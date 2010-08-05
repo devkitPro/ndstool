@@ -477,7 +477,17 @@ void Create()
 			fseek(fNDS, header.banner_offset, SEEK_SET);
 			if (bannertype == BANNER_IMAGE)
 			{
-				IconFromBMP();
+				char * Ext = strrchr(bannerfilename, '.');
+				if (Ext && strcasecmp(Ext, ".bmp") == 0)  
+					IconFromBMP();
+				else if (Ext && strcasecmp(Ext, ".grf") == 0)
+					IconFromGRF();
+				else
+				{
+					fprintf(stderr, 
+						"Banner File Error: Unknown extension '%s'!\n", Ext);
+					exit(1);
+				}
 			}
 			else
 			{
