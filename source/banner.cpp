@@ -93,8 +93,7 @@ void IconFromBMP()
  *      grit icon.png -g -gt -gB4 -gT <color> -m! -p -pe 16 -fh! -ftr
  */
 
-typedef struct
-{
+typedef struct {
 	unsigned char GfxAttr;
 	unsigned char MapAttr;
 	unsigned char MMapAttr;
@@ -105,21 +104,20 @@ typedef struct
 	unsigned char MetaTileWidth;
 	unsigned char MetaTileHeight;
 	
-	unsigned int  GfxWidth;
-	unsigned int  GfxHeight;
-}
-GRF_HEADER;
+	unsigned_int  GfxWidth;
+	unsigned_int  GfxHeight;
+} GRF_HEADER;
 
-void IconFromGRF()
-{
+void IconFromGRF() {
+
 	FILE     * GrfFile;
-	unsigned * GrfData;
-	unsigned * GrfPtr;
+	unsigned char *GrfData;
+	unsigned char *GrfPtr;
 	unsigned   GrfSize;
 	
 	GRF_HEADER * GrfHeader;
-	unsigned   * GfxData;
-	unsigned   * PalData;
+	unsigned char   *GfxData;
+	unsigned char   *PalData;
 	
 	Banner banner;
 	
@@ -135,7 +133,7 @@ void IconFromGRF()
 	GrfSize = ftell(GrfFile);
 	fseek(GrfFile, 0, SEEK_SET);
 	
-	GrfData = (unsigned *)malloc(GrfSize);
+	GrfData = (unsigned char *)malloc(GrfSize);
 	if (!GrfData)
 	{
 		fclose(GrfFile);
@@ -158,35 +156,35 @@ void IconFromGRF()
 	GfxData   = NULL;
 	PalData   = NULL;
 	
-	if (
-		(memcmp(&GrfData[0], "RIFF", 4) != 0) ||
-		(GrfData[1] != GrfSize-8) ||
-		(memcmp(&GrfData[2], "GRF ", 4) != 0)
-		)
+	unsigned int datasize = GrfData[4] | (GrfData[5] << 8) | (GrfData[6] << 16) | (GrfData[7] << 24); 
+
+	if ( (memcmp(&GrfData[0], "RIFF", 4) != 0) ||
+		 (datasize != GrfSize-8) ||
+		 (memcmp(&GrfData[8], "GRF ", 4) != 0) )
 	{
 		fprintf(stderr, "Banner File Error: File is no GRF File!\n");
 		goto error;
 	}
 	
-	GrfPtr = GrfData + 3;
+	GrfPtr = &GrfData[12];
 	
 	// Parse RIFF File Structure : Read Chunks
-	while ((unsigned)GrfPtr - (unsigned)GrfData < GrfSize)
+	while ((unsigned)(GrfPtr - GrfData) < GrfSize)
 	{
 		if (memcmp(&GrfPtr[0], "HDR ", 4) == 0)
 		{
-			GrfHeader =  (GRF_HEADER *)&GrfPtr[2];
+			GrfHeader =  (GRF_HEADER *)&GrfPtr[8];
 		}
 		else if (memcmp(&GrfPtr[0], "GFX ", 4) == 0)
 		{
-			GfxData = &GrfPtr[2];
+			GfxData = &GrfPtr[8];
 		}
 		else if (memcmp(&GrfPtr[0], "PAL ", 4) == 0)
 		{
-			PalData = &GrfPtr[2];
+			PalData = &GrfPtr[8];
 		}
-		
-		GrfPtr += (GrfPtr[1]+8)/4;
+		datasize = GrfPtr[4] | (GrfPtr[5] << 8) | (GrfPtr[6] << 16) | (GrfPtr[7] << 24);
+		GrfPtr += datasize+8;
 	}
 	
 	// Check Chunks
@@ -195,7 +193,6 @@ void IconFromGRF()
 		fprintf(stderr, "Banner File Error: GRF File is incomplete!\n");
 		goto error;
 	} 
-	
 	// Check Header
 	// Note: Error checking is probably incomplete
 	if (GrfHeader->GfxWidth != 32 && GrfHeader->GfxHeight != 32)
