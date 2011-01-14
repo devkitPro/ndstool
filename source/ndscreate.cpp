@@ -80,7 +80,7 @@ int CopyFromBin(char *binFilename, unsigned int *size = 0, unsigned int *size_wi
 /*
  * AddFile
  */
-void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id)
+void AddFile(const char *rootdir, const char *prefix, const char *entry_name, unsigned int file_id)
 {
 	// make filename
 	char strbuf[MAXPATHLEN];
@@ -134,7 +134,7 @@ void AddFile(char *rootdir, char *prefix, char *entry_name, unsigned int file_id
  * AddDirectory
  * Walks the tree and adds files to NDS
  */
-void AddDirectory(TreeNode *node, char *prefix, unsigned int this_dir_id, unsigned int _parent_id)
+void AddDirectory(TreeNode *node, const char *prefix, unsigned int this_dir_id, unsigned int _parent_id)
 {
 	// skip dummy node
 	node = node->next;
