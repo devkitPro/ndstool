@@ -21,7 +21,7 @@ export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-DEBUGFLAGS	:= -g
+DEBUGFLAGS	:=
 
 GAWK	?=	awk
 
@@ -59,7 +59,7 @@ ifneq (,$(findstring Darwin,$(UNAME)))
 endif
 
 ifneq (,$(findstring Linux,$(UNAME)))
-	LDFLAGS += -s -static
+	LDFLAGS += -static
 	OS := Linux
 endif
 
