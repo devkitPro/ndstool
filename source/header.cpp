@@ -3,8 +3,6 @@
 #include "sha1.h"
 #include "crc.h"
 #include "bigint.h"
-#include "arm7_sha1_homebrew.h"
-#include "arm7_sha1_nintendo.h"
 #include "encryption.h"
 
 /*
@@ -349,29 +347,6 @@ int CompareSha1WithList(unsigned char *arm7_sha1, const unsigned char *text, uns
 }
 
 /*
- * HashAndCompareWithList
- * -1=error, 0=match, 1=no match
- */
-int HashAndCompareWithList(char *filename, unsigned char sha1[])
-{
-	FILE *f = fopen(filename, "rb");
-	if (!f) return -1;
-	sha1_ctx m_sha1;
-	sha1_begin(&m_sha1);
-	unsigned char buf[1024];
-	unsigned int r;
-	do
-	{
-		r = fread(buf, 1, 1024, f);
-		sha1_hash(buf, r, &m_sha1);
-	} while (r > 0);
-	fclose(f);
-	sha1_end(sha1, &m_sha1);
-	if (CompareSha1WithList(sha1, arm7_sha1_homebrew, arm7_sha1_homebrew_size)) return 1;	// not yet in list
-	return 0;
-}
-
-/*
  * strsepc
  */
 char *strsepc(char **s, char d)
@@ -532,29 +507,6 @@ void ShowVerboseInfo(FILE *fNDS, Header &header, int romType)
 		fread(buf, 1, 0x200, fNDS);
 		unsigned long crc32 = ~CalcCrc32(buf, 0x200);
 		printf("\nSMT dumper v1.0 corruption check: \t%s\n", (crc32 == 0x7E8B456F) ? "CORRUPTED" : "OK");
-	}
-
-	// Verify ARM7 SHA1 hash against known default binaries
-	int bKnownArm7 = 0;
-	{
-		printf("\nARM7 binary hash : \t"); for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", arm7_sha1[i]); printf("\n");
-
-		if (CompareSha1WithList(arm7_sha1, arm7_sha1_homebrew, arm7_sha1_homebrew_size) == 0)
-		{
-			bKnownArm7 = 1; printf("ARM7 binary is homebrew verified.\n");
-		}
-		if (CompareSha1WithList(arm7_sha1, arm7_sha1_nintendo, arm7_sha1_nintendo_size) == 0)
-		{
-			bKnownArm7 = 2; printf("ARM7 binary is Nintendo verified.\n");
-		}
-		if (!bKnownArm7) printf("WARNING! ARM7 binary is NOT verified!\n");
-	}
-
-	// check ARM7 RAM address
-	if (bKnownArm7 != 2)
-	if ((header.arm7_ram_address < 0x03000000) || (header.arm7_ram_address >= 0x04000000))
-	{
-		printf("\nWARNING! ARM7 RAM address does not point to shared memory!\n");
 	}
 
 	// check ARM7 entry address

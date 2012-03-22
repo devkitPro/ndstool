@@ -23,9 +23,6 @@ export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 #---------------------------------------------------------------------------------
 DEBUGFLAGS	:=
 
-GAWK	?=	awk
-
-
 UNAME := $(shell uname -s)
 
 CFLAGS	:=	$(DEBUGFLAGS) -Wall -O2
@@ -87,8 +84,7 @@ export OUTPUTDIR:=	$(CURDIR)
 export OUTPUT	:=	$(CURDIR)/$(TARGET)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-			$(foreach dir,$(DATA),$(CURDIR)/$(dir)) \
-			$(CURDIR)/DefaultArm7 $(CURDIR)/Loader
+			$(foreach dir,$(DATA),$(CURDIR)/$(dir))
 
 export CC	:=	gcc
 export CXX	:=	g++
@@ -100,7 +96,7 @@ export AR	:=	ar
 CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES	:=	loadme.bin $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
+BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bin)))
 BMPFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.bmp)))
 
 export OFILES	:= $(BINFILES:.bin=.o) $(BMPFILES:.bmp=.o)  $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
@@ -130,26 +126,13 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) PassMeIncludes
-	@$(MAKE) -C Loader
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 all: clean $(BUILD)
 
 #---------------------------------------------------------------------------------
-.PHONY: PassMeIncludes
-PassMeIncludes: $(BUILD)/passme_vhd1.h $(BUILD)/passme_vhd2.h
-
-$(BUILD)/passme_vhd1.h: $(SOURCES)/passme.vhd
-	cat $< | $(GAWK) '/^--!/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (!COND) print "\"" $$0 "\\n\"" }' > $@
-
-$(BUILD)/passme_vhd2.h: $(SOURCES)/passme.vhd
-	cat $< | $(GAWK) '/^--!/ { COND=1; $$0=""; } // { gsub("\"", "\\\""); gsub("\011", "\\t"); gsub("\015", ""); if (COND) print "\"" $$0 "\\n\"" }' > $@
-
-#---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@$(MAKE) -C Loader clean
 	@rm -fr $(BUILD) $(OUTPUT)$(EXEEXT)
 
 #---------------------------------------------------------------------------------

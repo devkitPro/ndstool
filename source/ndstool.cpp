@@ -8,7 +8,6 @@
 #include "sha1.h"
 #include "ndscreate.h"
 #include "ndsextract.h"
-#include "passme.h"
 #include "hook.h"
 #include "encryption.h"
 
@@ -92,12 +91,9 @@ HelpLine helplines[] =
 	{"?",	"Show this help:\n-?[option]\nAll or single help for an option."},
 	{"i",	"Show information:\n-i [file.nds]\nHeader information."},
 	{"v",	"  Show more info\n-v [roms_rc.dat]\nChecksums, warnings, release info"},
-	{"p",	"PassMe:\n-p [file.nds] [passme.vhd] [passme.sav]\nGenerates PassMe2 files."},
 	{"k",	"Hook ARM7 executable\n-k [file.nds]\nCurrently not tested."},
 	{"f",	"Fix header CRC\n-f [file.nds]\nYou only need this after manual editing."},
-	//{"T",	"Test\n-T [file.nds]"},
 	{"s",	"En/decrypt secure area\n-s[e|E|d] [file.nds]\nEn/decrypt the secure area and\nput/remove card encryption tables and test patterns.\nOptionally add: d for decryption, e/E for encryption.\n(e: Nintendo offsets, E: others)"},
-	//{"@",	"Hash file & compare:\n-@ [arm7.bin]"},		// used in buildscript
 	{"1",	"List files:\n-l [file.nds]\nGive a list of contained files."},
 	{"v",	"  Show offsets/sizes\n-v"},
 	{"cx",	"Create/Extract\n-c/-x [file.nds]"},
@@ -169,11 +165,9 @@ enum {
 	ACTION_SHOWINFO,
 	ACTION_FIXHEADERCRC,
 	ACTION_ENCRYPTSECUREAREA,
-	ACTION_PASSME,
 	ACTION_LISTFILES,
 	ACTION_EXTRACT,
 	ACTION_CREATE,
-	ACTION_HASHFILE,
 	ACTION_HOOK,
 };
 
@@ -220,15 +214,6 @@ int main(int argc, char *argv[])
 					ADDACTION(ACTION_ENCRYPTSECUREAREA);
 					endecrypt_option = argv[a][2];
 					OPTIONAL(ndsfilename);
-					break;
-				}
-
-				case 'p':	// PassMe
-				{
-					ADDACTION(ACTION_PASSME);
-					OPTIONAL(ndsfilename);
-					OPTIONAL(vhdfilename);
-					OPTIONAL(sramfilename);
 					break;
 				}
 
@@ -284,14 +269,6 @@ int main(int argc, char *argv[])
 						REQUIRED(arm9filename);
 					}
 					break;
-
-				// hash file
-				case '@':
-				{
-					ADDACTION(ACTION_HASHFILE);
-					OPTIONAL(arm7filename);
-					break;
-				}
 
 				// hook ARM7 executable
 				case 'k':
@@ -478,31 +455,10 @@ int main(int argc, char *argv[])
 				Create();
 				break;
 
-			case ACTION_PASSME:
-				status = PassMe(ndsfilename, vhdfilename, sramfilename);
-				break;
-
 			case ACTION_LISTFILES:
 				filerootdir = 0;
 				/*status =*/ ExtractFiles(ndsfilename);
 				break;
-
-			case ACTION_HASHFILE:
-			{
-				char *filename = arm7filename;
-				if (!filename) filename = ndsfilename;
-				if (!filename) return 1;
-				unsigned char sha1[SHA1_DIGEST_SIZE];
-				int r = HashAndCompareWithList(filename, sha1);
-				status = -1;
-				if (r > 0)
-				{
-					for (int i=0; i<SHA1_DIGEST_SIZE; i++) printf("%02X", sha1[i]);
-					printf("\n");
-					status = 0;
-				}
-				break;
-			}
 			
 			case ACTION_HOOK:
 			{
