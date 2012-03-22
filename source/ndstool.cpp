@@ -57,7 +57,7 @@ unsigned int arm7Entry = 0;
  */
 void Title()
 {
-	printf("Nintendo DS rom tool "VERSION" - %s\nby Rafael Vuijk, Dave Murphy, Alexei Karpenko\n",CompileDate);
+	printf("Nintendo DS rom tool "PACKAGE_VERSION" - %s\nby Rafael Vuijk, Dave Murphy, Alexei Karpenko\n",CompileDate);
 }
 
 /*
