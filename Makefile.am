@@ -9,6 +9,6 @@ ndstool_SOURCES	=	source/banner.cpp source/banner.h source/bigint.cpp source/big
 		source/logo.h source/ndscodes.cpp source/ndscreate.cpp source/ndscreate.h \
 		source/ndsextract.cpp source/ndsextract.h source/ndstool.cpp source/ndstool.h \
 		source/ndstree.cpp source/ndstree.h source/overlay.h source/raster.cpp \
-		source/raster.h source/sha1.cpp source/sha1.hsource/types.h
+		source/raster.h source/sha1.cpp source/sha1.h source/types.h
 
 EXTRA_DIST = autogen.sh default_icon.bmp
