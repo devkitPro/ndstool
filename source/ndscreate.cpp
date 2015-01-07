@@ -43,6 +43,20 @@ bool HasElfExtension(char *filename)
 	return (strcmp(p, ".elf") == 0);
 }
 
+
+bool HasElfHeader(char *filename)
+{
+	char hdr[4];
+
+	FILE *fi = fopen(filename, "rb");
+	if (!fi) return false;
+	int bytesread = fread(hdr,1,4,fi);
+	fclose(fi);
+	if(bytesread<=0) return false;
+	if(strncmp(hdr,"\x7f""ELF",4) == 0) return true;
+	return false;
+}
+
 /*
  * CopyFromBin
  */
@@ -243,7 +257,7 @@ void Create()
 		if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", headerfilename); exit(1); }
 		fread(&header, 1, 0x200, fi);
 		fclose(fi);
-		
+
 		if ((header.arm9_ram_address + 0x800 == header.arm9_entry_address) || (header.rom_header_size > 0x200))
 		{
 			bSecureSyscalls = true;
@@ -344,7 +358,8 @@ void Create()
 
 		unsigned int size = 0;
 
-		if (HasElfExtension(arm9filename))
+
+		if (HasElfExtension(arm9filename) || HasElfHeader(arm9filename) )
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
 		else
 			CopyFromBin(arm9filename, 0, &size);
@@ -387,7 +402,7 @@ void Create()
 	#ifdef __WIN32__
 	// convert to standard windows path
 	if ( devkitProPATH && devkitProPATH[0] == '/' ) {
-		devkitProPATH[0] = devkitProPATH[1]; 
+		devkitProPATH[0] = devkitProPATH[1];
 		devkitProPATH[1] = ':';
 	}
 	#endif
@@ -404,7 +419,7 @@ void Create()
 		strcat(arm7PathName,"/libnds/default.elf");
 		arm7filename = arm7PathName;
 	}
-	
+
 	unsigned int entry_address = arm7Entry ? arm7Entry : (unsigned int)header.arm7_entry_address;		// template
 	unsigned int ram_address = arm7RamAddress ? arm7RamAddress : (unsigned int)header.arm7_ram_address;		// template
 	if (!ram_address && entry_address) ram_address = entry_address;
@@ -478,13 +493,13 @@ void Create()
 			if (bannertype == BANNER_IMAGE)
 			{
 				char * Ext = strrchr(bannerfilename, '.');
-				if (Ext && strcasecmp(Ext, ".bmp") == 0)  
+				if (Ext && strcasecmp(Ext, ".bmp") == 0)
 					IconFromBMP();
 				else if (Ext && strcasecmp(Ext, ".grf") == 0)
 					IconFromGRF();
 				else
 				{
-					fprintf(stderr, 
+					fprintf(stderr,
 						"Banner File Error: Unknown extension '%s'!\n", Ext);
 					exit(1);
 				}
