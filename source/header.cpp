@@ -99,9 +99,10 @@ void FixHeaderCRC(char *ndsfilename)
 	fNDS = fopen(ndsfilename, "r+b");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 	fread(&header, 512, 1, fNDS);
+	header.logo_crc = CalcLogoCRC(header);
 	header.header_crc = CalcHeaderCRC(header);
 	fseek(fNDS, 0, SEEK_SET);
-	fwrite(&header, 512, 1, fNDS);
+	fwrite(&header, header.rom_header_size, 1, fNDS);
 	fclose(fNDS);
 }
 
