@@ -215,11 +215,9 @@ void ShowHeaderInfo(Header &header, int romType, unsigned int length = 0x200)
 	
 	if (header.unitcode & 2) {
 		printf("0x1C0\t%-25s\t0x%X\n", "DSi9 ROM offset", (int)header.dsi9_rom_offset);
-		printf("0x1C4\t%-25s\t0x%X\n", "DSi9 entry address", (int)header.dsi9_entry_address);
 		printf("0x1C8\t%-25s\t0x%X\n", "DSi9 RAM address", (int)header.dsi9_ram_address);
 		printf("0x1CC\t%-25s\t0x%X\n", "DSi9 code size", (int)header.dsi9_size);
 		printf("0x1D0\t%-25s\t0x%X\n", "DSi7 ROM offset", (int)header.dsi7_rom_offset);
-		printf("0x1D4\t%-25s\t0x%X\n", "DSi7 entry address", (int)header.dsi7_entry_address);
 		printf("0x1D8\t%-25s\t0x%X\n", "DSi7 RAM address", (int)header.dsi7_ram_address);
 		printf("0x1DC\t%-25s\t0x%X\n", "DSi7 code size", (int)header.dsi7_size);	
 		offset=0x1E0;

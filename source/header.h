@@ -69,11 +69,11 @@ struct Header
 	u8 h1B1[0x0E];
 	u8 appflags;
 	unsigned_int dsi9_rom_offset;
-	unsigned_int dsi9_entry_address;
+	unsigned_int dsi9_unknown;
 	unsigned_int dsi9_ram_address;
 	unsigned_int dsi9_size;
 	unsigned_int dsi7_rom_offset;
-	unsigned_int dsi7_entry_address;
+	unsigned_int dsi7_unknown;
 	unsigned_int dsi7_ram_address;
 	unsigned_int dsi7_size; 
 	unsigned_int offset_0x1E0;
