@@ -57,7 +57,7 @@ unsigned int arm7Entry = 0;
  */
 void Title()
 {
-	printf("Nintendo DS rom tool "PACKAGE_VERSION" - %s\nby Rafael Vuijk, Dave Murphy, Alexei Karpenko\n",CompileDate);
+	printf("Nintendo DS rom tool " PACKAGE_VERSION " - %s\nby Rafael Vuijk, Dave Murphy, Alexei Karpenko\n",CompileDate);
 }
 
 /*
@@ -96,7 +96,8 @@ HelpLine helplines[] =
 	{"s",	"En/decrypt secure area\n-s[e|E|d] [file.nds]\nEn/decrypt the secure area and\nput/remove card encryption tables and test patterns.\nOptionally add: d for decryption, e/E for encryption.\n(e: Nintendo offsets, E: others)"},
 	{"1",	"List files:\n-l [file.nds]\nGive a list of contained files."},
 	{"v",	"  Show offsets/sizes\n-v"},
-	{"cx",	"Create/Extract\n-c/-x [file.nds]"},
+	{"c",	"Create\n-c [file.nds]"},
+	{"x",	"Extract\n-x [file.nds]"},
 	{"v",	"  Show more info\n-v[v...]\nShow filenames and more header info.\nUse multiple v's for more information."},
 	{"9",	"  ARM9 executable\n-9 file.bin"},
 	{"7",	"  ARM7 executable\n-7 file.bin"},
