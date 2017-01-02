@@ -155,7 +155,8 @@ typedef enum
 int  CopyFromElf(char *elfFilename, 
                  unsigned int *entry,
                  unsigned int *ram_address,
-                 unsigned int *size);
+                 unsigned int *size,
+                 bool is_twl);
 void ElfReadHdr(FILE *fp, Elf32_Ehdr *hdr, Elf32_Phdr **phdr);
 void ElfWriteData(size_t n, FILE *in, FILE *out);
 void ElfWriteZeros(size_t n, FILE *fp);

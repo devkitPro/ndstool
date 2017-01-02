@@ -28,7 +28,7 @@ void Hook(char *ndsfilename, char *arm7filename)
 	fclose(fARM7);
 
 	// restore backup of original header if found
-	if (header.offset_0x160)
+	if (header.debug_rom_offset) // FIXME: What is this?!
 	{
 		fseek(fNDS, header.offset_0x78, SEEK_SET);
 		Header originalHeader;
