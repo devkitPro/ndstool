@@ -7,6 +7,7 @@
 #include "loadme.h"
 #include "ndstree.h"
 #include "elf.h"
+#include "sha1.h"
 
 unsigned int arm9_align = 0x1FF;
 unsigned int arm7_align = 0x1FF;
@@ -14,6 +15,7 @@ unsigned int fnt_align = 0x1FF;		// 0x3 0x1FF
 unsigned int fat_align = 0x1FF;		// 0x3 0x1FF
 unsigned int banner_align = 0x1FF;
 unsigned int file_align = 0x1FF;	// 0x3 0x1FF
+unsigned int sector_align = 0x3FF;
 
 unsigned int overlay_files = 0;
 
@@ -32,6 +34,40 @@ const unsigned char nintendo_logo[] =
 	0x78,0x00,0x90,0xCB,0x88,0x11,0x3A,0x94,0x65,0xC0,0x7C,0x63,0x87,0xF0,0x3C,0xAF,
 	0xD6,0x25,0xE4,0x8B,0x38,0x0A,0xAC,0x72,0x21,0xD4,0xF8,0x07,
 };
+
+const unsigned char hmac_sha1_key[] =
+{
+	0x21,0x06,0xC0,0xDE,0xBA,0x98,0xCE,0x3F,0xA6,0x92,0xE3,0x9D,0x46,0xF2,0xED,0x01,
+	0x76,0xE3,0xCC,0x08,0x56,0x23,0x63,0xFA,0xCA,0xD4,0xEC,0xDF,0x9A,0x62,0x78,0x34,
+	0x8F,0x6D,0x63,0x3C,0xFE,0x22,0xCA,0x92,0x20,0x88,0x97,0x23,0xD2,0xCF,0xAE,0xC2,
+	0x32,0x67,0x8D,0xFE,0xCA,0x83,0x64,0x98,0xAC,0xFD,0x3E,0x37,0x87,0x46,0x58,0x24,
+};
+
+void Sha1Hmac(u8 output[20], FILE* f, unsigned int pos, unsigned int size)
+{
+	sha1_ctx cx[1];
+	u8 readbuf[4096];
+	u8 keypad[0x40];
+	for (int i = 0; i < 0x40; i ++) keypad[i] = hmac_sha1_key[i]^0x36;
+	sha1_begin(cx);
+	sha1_hash(keypad, 0x40, cx);
+	unsigned int tmp = ftell(f);
+	fseek(f, pos, SEEK_SET);
+	while (size)
+	{
+		unsigned int rdbytes = size > sizeof(readbuf) ? sizeof(readbuf) : size;
+		fread(readbuf, 1, rdbytes, f);
+		sha1_hash(readbuf, rdbytes, cx);
+		size -= rdbytes;
+	}
+	sha1_end(output, cx);
+	for (int i = 0; i < 0x40; i ++) keypad[i] = hmac_sha1_key[i]^0x5c;
+	sha1_begin(cx);
+	sha1_hash(keypad, 0x40, cx);
+	sha1_hash(output, 20, cx);
+	sha1_end(output, cx);
+	fseek(f, tmp, SEEK_SET);
+}
 
 /*
  * HasElfExtension
@@ -242,12 +278,12 @@ void AddDirectory(TreeNode *node, const char *prefix, unsigned int this_dir_id, 
  */
 void Create()
 {
-	fNDS = fopen(ndsfilename, "wb");
+	fNDS = fopen(ndsfilename, "wb+");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 
 	bool bSecureSyscalls = false;
 	char *headerfilename = (headerfilename_or_size && (strtoul(headerfilename_or_size,0,0) == 0)) ? headerfilename_or_size : 0;
-	u32 headersize = headerfilename_or_size ? strtoul(headerfilename_or_size,0,0) : 0x200;
+	u32 headersize = headerfilename_or_size ? strtoul(headerfilename_or_size,0,0) : 0x4000;
 
 	// initial header data
 	if (headerfilename)
@@ -269,18 +305,21 @@ void Create()
 		memset(&header, 0, sizeof(header));
 		memcpy(header.gamecode, "####", 4);
 
-		if ((arm9RamAddress + 0x800 == arm9Entry) || (headersize > 0x200))
+		if (arm9RamAddress + 0x800 == arm9Entry)
 		{
 			bSecureSyscalls = true;
 		}
-		else
+		else if (headersize == 0x200)
 		{
 			header.reserved2 = 0x04;		// autostart
 			*(unsigned_int *)(((unsigned char *)&header) + 0x0) = 0xEA00002E;		// for PassMe's that start @ 0x08000000
+		} else if (!title)
+		{
+			memcpy(header.title, "HOMEBREW", 8);
 		}
-		*(unsigned_int *)(((unsigned char *)&header) + 0x60) = 1<<22 | latency2<<16 | 1<<14 | 1<<13 | latency1;	// ROM control info 1
-		*(unsigned_int *)(((unsigned char *)&header) + 0x64) = 1<<29 | latency2<<16 | latency1;	// ROM control info 2
-		*(unsigned_short *)(((unsigned char *)&header) + 0x6E) = 0x051E;	// ROM control info 3
+		header.rom_control_info1 = 1<<22 | latency2<<16 | 1<<14 | 1<<13 | latency1;	// ROM control info 1
+		header.rom_control_info2 = 1<<29 | latency2<<16 | latency1;	// ROM control info 2
+		header.rom_control_info3 = 0x051E;	// ROM control info 3
 	}
 	if (headersize) header.rom_header_size = headersize;
 	if (header.rom_header_size == 0) header.rom_header_size = bSecureSyscalls ? 0x4000 : 0x200;
@@ -304,7 +343,7 @@ void Create()
 			fclose(fi);
 		}
 	}
-	else if (bSecureSyscalls)	// use Nintendo logo
+	else if (header.rom_header_size > 0x200)	// use Nintendo logo
 	{
 		memcpy(((unsigned char *)&header) + 0xC0, nintendo_logo, sizeof(nintendo_logo));
 	}
@@ -326,6 +365,7 @@ void Create()
 	fseek(fNDS, header.rom_header_size, SEEK_SET);
 
 	// ARM9 binary
+	bool is_arm9_elf;
 	if (arm9filename)
 	{
 		header.arm9_rom_offset = (ftell(fNDS) + arm9_align) &~ arm9_align;
@@ -358,9 +398,9 @@ void Create()
 
 		unsigned int size = 0;
 
-
-		if (HasElfExtension(arm9filename) || HasElfHeader(arm9filename) )
-			CopyFromElf(arm9filename, &entry_address, &ram_address, &size);
+		is_arm9_elf = HasElfExtension(arm9filename) || HasElfHeader(arm9filename);
+		if (is_arm9_elf)
+			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, false);
 		else
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
@@ -420,22 +460,26 @@ void Create()
 		arm7filename = arm7PathName;
 	}
 
-	unsigned int entry_address = arm7Entry ? arm7Entry : (unsigned int)header.arm7_entry_address;		// template
-	unsigned int ram_address = arm7RamAddress ? arm7RamAddress : (unsigned int)header.arm7_ram_address;		// template
-	if (!ram_address && entry_address) ram_address = entry_address;
-	if (!entry_address && ram_address) entry_address = ram_address;
-	if (!ram_address) { ram_address = entry_address = 0x037f8000; }
+	bool is_arm7_elf = HasElfExtension(arm7filename) || HasElfHeader(arm7filename);
+	// if (arm7filename)
+	{
+		unsigned int entry_address = arm7Entry ? arm7Entry : (unsigned int)header.arm7_entry_address;		// template
+		unsigned int ram_address = arm7RamAddress ? arm7RamAddress : (unsigned int)header.arm7_ram_address;		// template
+		if (!ram_address && entry_address) ram_address = entry_address;
+		if (!entry_address && ram_address) entry_address = ram_address;
+		if (!ram_address) { ram_address = entry_address = 0x037f8000; }
 
-	unsigned int size = 0;
+		unsigned int size = 0;
 
-	if (HasElfExtension(arm7filename))
-		CopyFromElf(arm7filename, &entry_address, &ram_address, &size);
-	else
-		CopyFromBin(arm7filename, &size);
+		if (is_arm7_elf)
+			CopyFromElf(arm7filename, &entry_address, &ram_address, &size, false);
+		else
+			CopyFromBin(arm7filename, &size);
 
-	header.arm7_entry_address = entry_address;
-	header.arm7_ram_address = ram_address;
-	header.arm7_size = ((size + 3) &~ 3);
+		header.arm7_entry_address = entry_address;
+		header.arm7_ram_address = ram_address;
+		header.arm7_size = ((size + 3) &~ 3);
+	}
 
 	// ARM7 overlay table
 	if (arm7ovltablefilename)
@@ -547,6 +591,107 @@ void Create()
 		fseek(fNDS, newfilesize-1, SEEK_SET);
 		fputc(0, fNDS);
 	}
+
+	// DSi ARM9 binary
+	if (header.rom_header_size > 0x200 && is_arm9_elf)
+	{
+		header.dsi9_rom_offset = (ftell(fNDS) + sector_align) &~ sector_align;
+		fseek(fNDS, header.dsi9_rom_offset, SEEK_SET);
+
+		unsigned int ram_address = 0;
+		unsigned int size = 0;
+		CopyFromElf(arm9filename, NULL, &ram_address, &size, true);
+		if (!size)
+		{
+			ram_address = 0x2400000;
+			size = 0x200;
+			fwrite("----DSi9----", 1, 12, fNDS);
+			fseek(fNDS, header.dsi9_rom_offset+size-1, SEEK_SET);
+			fputc(0, fNDS);
+		}
+		header.dsi9_ram_address = ram_address;
+		header.dsi9_size = ((size + 3) &~ 3);
+	}
+
+	// DSi ARM7 binary
+	if (header.rom_header_size > 0x200 && is_arm7_elf)
+	{
+		header.dsi7_rom_offset = (ftell(fNDS) + arm7_align) &~ arm7_align;
+		fseek(fNDS, header.dsi7_rom_offset, SEEK_SET);
+
+		unsigned int ram_address = 0;
+		unsigned int size = 0;
+		CopyFromElf(arm7filename, NULL, &ram_address, &size, true);
+		if (!size)
+		{
+			ram_address = 0x2E80000;
+			size = 0x200;
+			fwrite("----DSi7----", 1, 12, fNDS);
+			fseek(fNDS, header.dsi7_rom_offset+size-1, SEEK_SET);
+			fputc(0, fNDS);
+		}
+		header.dsi7_ram_address = ram_address;
+		header.dsi7_size = ((size + 3) &~ 3);
+	}
+
+	if (header.dsi9_size || header.dsi7_size)
+	{
+		// This is a DSi application!
+		header.unitcode = 2;
+		header.dsi_flags = 0x3;
+		header.rom_control_info1 = 0x00586000;
+		header.rom_control_info2 = 0x001808F8;
+		header.rom_control_info3 = 0x051E;
+		header.offset_0x88 = 0x0004D0B8;
+		header.offset_0x8C = 0x00000544;
+		header.offset_0x90 = 0x00160016;
+
+		static const u8 global_mbk[5][4] =
+		{
+			{0x81, 0x85, 0x89, 0x8D},
+			{0x80, 0x84, 0x88, 0x8C},
+			{0x90, 0x94, 0x98, 0x9C},
+			{0x80, 0x84, 0x88, 0x8C},
+			{0x90, 0x94, 0x98, 0x9C},
+		};
+
+		memcpy(header.global_mbk_setting, global_mbk, sizeof(header.global_mbk_setting));
+		header.arm9_mbk_setting[0] = 0x00000000;
+		header.arm9_mbk_setting[1] = 0x07C03740;
+		header.arm9_mbk_setting[2] = 0x07403700;
+		header.arm7_mbk_setting[0] = 0x00403000;
+		header.arm7_mbk_setting[1] = 0x07C03740;
+		header.arm7_mbk_setting[2] = 0x07403700;
+		header.mbk9_wramcnt_setting = (0x03<<24) | 0x00000F;
+
+		header.region_flags = 0xFFFFFFFF;
+		header.access_control = 0x00000138;
+		header.scfg_ext_mask = 0x8307B19F; // enable access to everything
+		header.appflags = 1;
+		header.banner_size = 2112;
+		header.offset_0x20C = 0x00010000;
+		header.offset_0x218 = 0x0004D084;
+		header.offset_0x21C = 0x0000052C;
+		header.tid_low  = header.gamecode[3] | (header.gamecode[2]<<8) | (header.gamecode[1]<<16) | (header.gamecode[0]<<24);
+		header.tid_high = 0x00030000; //0x00030004 does not work from DSi Menu
+		memset(header.age_ratings, 0x80, sizeof(header.age_ratings));
+
+		Sha1Hmac(header.hmac_arm9, fNDS, header.arm9_rom_offset, header.arm9_size);
+		Sha1Hmac(header.hmac_arm7, fNDS, header.arm7_rom_offset, header.arm7_size);
+		Sha1Hmac(header.hmac_icon_title, fNDS, header.banner_offset, header.banner_size);
+		Sha1Hmac(header.hmac_arm9i, fNDS, header.dsi9_rom_offset, header.dsi9_size);
+		Sha1Hmac(header.hmac_arm7i, fNDS, header.dsi7_rom_offset, header.dsi7_size);
+		memset(header.rsa_signature, 0xFF, 0x80);
+
+		newfilesize = (ftell(fNDS) + file_align) & ~file_align;
+		header.total_rom_size = newfilesize;
+
+		if (newfilesize != ftell(fNDS) ) {
+			fseek(fNDS, newfilesize-1, SEEK_SET);
+			fputc(0, fNDS);
+		}
+	}
+
 	// calculate device capacity
 	newfilesize |= newfilesize >> 16; newfilesize |= newfilesize >> 8;
 	newfilesize |= newfilesize >> 4; newfilesize |= newfilesize >> 2;
@@ -560,8 +705,18 @@ void Create()
 	// fix up header CRCs and write header
 	header.logo_crc = CalcLogoCRC(header);
 	header.header_crc = CalcHeaderCRC(header);
+
+	if (header.unitcode & 2)
+	{
+		// Dummy signature for no$gba
+		header.rsa_signature[0x00] = 0;
+		header.rsa_signature[0x01] = 1;
+		header.rsa_signature[0x6B] = 0;
+		sha1(&header.rsa_signature[0x6C], (const unsigned char*)&header, 0xE00);
+	}
+
 	fseek(fNDS, 0, SEEK_SET);
-	fwrite(&header, 0x200, 1, fNDS);
+	fwrite(&header, (header.unitcode&2) ? 0x1000 : 0x200, 1, fNDS);
 
 	fclose(fNDS);
 }
