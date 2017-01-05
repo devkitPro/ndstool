@@ -101,6 +101,16 @@ void FixHeaderCRC(char *ndsfilename)
 	fread(&header, 512, 1, fNDS);
 	header.logo_crc = CalcLogoCRC(header);
 	header.header_crc = CalcHeaderCRC(header);
+
+	if (header.unitcode & 2)
+	{
+		// Dummy signature for no$gba
+		header.rsa_signature[0x00] = 0;
+		header.rsa_signature[0x01] = 1;
+		header.rsa_signature[0x6B] = 0;
+		sha1(&header.rsa_signature[0x6C], (const unsigned char*)&header, 0xE00);
+	}
+
 	fseek(fNDS, 0, SEEK_SET);
 	fwrite(&header, header.rom_header_size, 1, fNDS);
 	fclose(fNDS);
