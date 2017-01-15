@@ -1,4 +1,5 @@
 #include <time.h>
+#include <unistd.h>
 #include "ndstool.h"
 #include "logo.h"
 #include "raster.h"
@@ -274,16 +275,57 @@ void AddDirectory(TreeNode *node, const char *prefix, unsigned int this_dir_id, 
 }
 
 /*
+ * GetDefaultArm7
+ * Retrieves the path to the default homebrew ARM7 component
+ */
+void GetDefaultArm7(char* buffer, size_t size)
+{
+	char *devkitProPATH;
+	devkitProPATH = getenv("DEVKITPRO");
+
+	#ifdef __WIN32__
+	// convert to standard windows path
+	if ( devkitProPATH && devkitProPATH[0] == '/' ) {
+		devkitProPATH[0] = devkitProPATH[1];
+		devkitProPATH[1] = ':';
+	}
+	#endif
+
+	if (!devkitProPATH) {
+		fprintf(stderr,"No arm7 specified and DEVKITPRO missing from environment!\n");
+		exit(1);
+	}
+
+	strncpy(buffer, devkitProPATH, size);
+	strncat(buffer, "/libnds/default.elf", size);
+}
+
+/*
  * Create
  */
 void Create()
 {
+	if (!arm9filename) {
+		fprintf(stderr, "ARM9 binary file required.\n");
+		exit(1);
+	}
+
+	char arm7PathName[MAXPATHLEN];
+	if (!arm7filename) {
+		GetDefaultArm7(arm7PathName, sizeof(arm7PathName));
+		arm7filename = arm7PathName;
+	}
+
+	bool is_arm9_elf = HasElfExtension(arm9filename) || HasElfHeader(arm9filename);
+	bool is_arm7_elf = HasElfExtension(arm7filename) || HasElfHeader(arm7filename);
+	bool is_both_elf = is_arm9_elf && is_arm7_elf;
+
 	fNDS = fopen(ndsfilename, "wb+");
 	if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
 
 	bool bSecureSyscalls = false;
 	char *headerfilename = (headerfilename_or_size && (strtoul(headerfilename_or_size,0,0) == 0)) ? headerfilename_or_size : 0;
-	u32 headersize = headerfilename_or_size ? strtoul(headerfilename_or_size,0,0) : 0x4000;
+	u32 headersize = headerfilename_or_size ? strtoul(headerfilename_or_size,0,0) : (is_both_elf ? 0x4000 : 0x200);
 
 	// initial header data
 	if (headerfilename)
@@ -365,8 +407,6 @@ void Create()
 	fseek(fNDS, header.rom_header_size, SEEK_SET);
 
 	// ARM9 binary
-	bool is_arm9_elf;
-	if (arm9filename)
 	{
 		header.arm9_rom_offset = (ftell(fNDS) + arm9_align) &~ arm9_align;
 		fseek(fNDS, header.arm9_rom_offset, SEEK_SET);
@@ -397,8 +437,6 @@ void Create()
 		}
 
 		unsigned int size = 0;
-
-		is_arm9_elf = HasElfExtension(arm9filename) || HasElfHeader(arm9filename);
 		if (is_arm9_elf)
 			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, false);
 		else
@@ -406,11 +444,6 @@ void Create()
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
 		header.arm9_size = header.arm9_size + ((size + 3) &~ 3);
-	}
-	else
-	{
-		fprintf(stderr, "ARM9 binary file required.\n");
-		exit(1);
 	}
 
 	// ARM9 overlay table
@@ -436,31 +469,6 @@ void Create()
 	header.arm7_rom_offset = (ftell(fNDS) + arm7_align) &~ arm7_align;
 	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
 
-	char *devkitProPATH;
-	devkitProPATH = getenv("DEVKITPRO");
-
-	#ifdef __WIN32__
-	// convert to standard windows path
-	if ( devkitProPATH && devkitProPATH[0] == '/' ) {
-		devkitProPATH[0] = devkitProPATH[1];
-		devkitProPATH[1] = ':';
-	}
-	#endif
-
-	if ( !arm7filename) {
-		char arm7PathName[MAXPATHLEN];
-
-		if (!devkitProPATH) {
-			fprintf(stderr,"No arm7 specified and DEVKITPRO missing from environment!\n");
-			exit(1);
-		}
-
-		strcpy(arm7PathName,devkitProPATH);
-		strcat(arm7PathName,"/libnds/default.elf");
-		arm7filename = arm7PathName;
-	}
-
-	bool is_arm7_elf = HasElfExtension(arm7filename) || HasElfHeader(arm7filename);
 	// if (arm7filename)
 	{
 		unsigned int entry_address = arm7Entry ? arm7Entry : (unsigned int)header.arm7_entry_address;		// template
@@ -592,52 +600,70 @@ void Create()
 		fputc(0, fNDS);
 	}
 
-	// DSi ARM9 binary
-	if (header.rom_header_size > 0x200 && is_arm9_elf)
+	// DSi sections
+	if (header.rom_header_size > 0x200 && is_both_elf)
 	{
-		header.dsi9_rom_offset = (ftell(fNDS) + sector_align) &~ sector_align;
-		fseek(fNDS, header.dsi9_rom_offset, SEEK_SET);
+		int sections = 2;
 
-		unsigned int ram_address = 0;
-		unsigned int size = 0;
-		CopyFromElf(arm9filename, NULL, &ram_address, &size, true);
-		if (!size)
+		// DSi ARM9 binary
 		{
-			ram_address = 0x2400000;
-			size = 0x200;
-			fwrite("----DSi9----", 1, 12, fNDS);
-			fseek(fNDS, header.dsi9_rom_offset+size-1, SEEK_SET);
-			fputc(0, fNDS);
+			header.dsi9_rom_offset = (ftell(fNDS) + sector_align) &~ sector_align;
+			fseek(fNDS, header.dsi9_rom_offset, SEEK_SET);
+
+			unsigned int ram_address = 0;
+			unsigned int size = 0;
+			CopyFromElf(arm9filename, NULL, &ram_address, &size, true);
+			if (!size)
+			{
+				sections--;
+				ram_address = (header.arm9_ram_address + header.arm9_size + 3) &~ 3;
+				if (0x2400000 > ram_address)
+					ram_address = 0x2400000;
+				size = 0x200;
+				fwrite("----DSi9----", 1, 12, fNDS);
+				fseek(fNDS, header.dsi9_rom_offset+size-1, SEEK_SET);
+				fputc(0, fNDS);
+			}
+			header.dsi9_ram_address = ram_address;
+			header.dsi9_size = ((size + 3) &~ 3);
 		}
-		header.dsi9_ram_address = ram_address;
-		header.dsi9_size = ((size + 3) &~ 3);
+
+		// DSi ARM7 binary
+		{
+			header.dsi7_rom_offset = (ftell(fNDS) + arm7_align) &~ arm7_align;
+			fseek(fNDS, header.dsi7_rom_offset, SEEK_SET);
+
+			unsigned int ram_address = 0;
+			unsigned int size = 0;
+			CopyFromElf(arm7filename, NULL, &ram_address, &size, true);
+			if (!size)
+			{
+				sections--;
+				ram_address = 0x2E80000;
+				size = 0x200;
+				fwrite("----DSi7----", 1, 12, fNDS);
+				fseek(fNDS, header.dsi7_rom_offset+size-1, SEEK_SET);
+				fputc(0, fNDS);
+			}
+			header.dsi7_ram_address = ram_address;
+			header.dsi7_size = ((size + 3) &~ 3);
+		}
+
+		if (sections)
+		{
+			// This is a DSi application!
+			header.unitcode = 2;
+		} else
+		{
+			// Undo DSi section copy, keep this a NDS-only image
+			fseek(fNDS, newfilesize, SEEK_SET);
+			ftruncate(fileno(fNDS), newfilesize);
+		}
 	}
 
-	// DSi ARM7 binary
-	if (header.rom_header_size > 0x200 && is_arm7_elf)
+	// Set flags in DSi extended header
+	if (header.unitcode & 2)
 	{
-		header.dsi7_rom_offset = (ftell(fNDS) + arm7_align) &~ arm7_align;
-		fseek(fNDS, header.dsi7_rom_offset, SEEK_SET);
-
-		unsigned int ram_address = 0;
-		unsigned int size = 0;
-		CopyFromElf(arm7filename, NULL, &ram_address, &size, true);
-		if (!size)
-		{
-			ram_address = 0x2E80000;
-			size = 0x200;
-			fwrite("----DSi7----", 1, 12, fNDS);
-			fseek(fNDS, header.dsi7_rom_offset+size-1, SEEK_SET);
-			fputc(0, fNDS);
-		}
-		header.dsi7_ram_address = ram_address;
-		header.dsi7_size = ((size + 3) &~ 3);
-	}
-
-	if (header.dsi9_size || header.dsi7_size)
-	{
-		// This is a DSi application!
-		header.unitcode = 2;
 		header.dsi_flags = 0x3;
 		header.rom_control_info1 = 0x00586000;
 		header.rom_control_info2 = 0x001808F8;
