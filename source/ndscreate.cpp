@@ -653,6 +653,25 @@ void Create()
 		{
 			// This is a DSi application!
 			header.unitcode = 2;
+
+			// Flag as DSi exclusive if ARM9 is too big
+			if (header.arm9_size > 0x3BFE00)
+				header.unitcode |= 1;
+
+			// Move ARM7 out of the way if it overlaps with ARM9
+			unsigned int arm9_end = header.arm9_ram_address+header.arm9_size;
+			if (header.arm7_ram_address < arm9_end)
+			{
+				unsigned int new_arm7_addr = (arm9_end + 3) &~ 3;
+				header.arm7_entry_address = header.arm7_entry_address + new_arm7_addr - header.arm7_ram_address;
+				header.arm7_ram_address = new_arm7_addr;
+				header.unitcode |= 1;
+
+				// Move ARM9i out of the way if it overlaps with ARM7
+				unsigned int arm7_end = header.arm7_ram_address+header.arm7_size;
+				if (header.dsi9_ram_address < arm7_end)
+					header.dsi9_ram_address = (arm7_end + 3) &~ 3;
+			}
 		} else
 		{
 			// Undo DSi section copy, keep this a NDS-only image
