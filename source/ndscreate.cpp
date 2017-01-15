@@ -666,14 +666,14 @@ void Create()
 
 		header.region_flags = 0xFFFFFFFF;
 		header.access_control = 0x00000138;
-		header.scfg_ext_mask = 0x8307B19F; // enable access to everything
+		header.scfg_ext_mask = scfgExtMask;
 		header.appflags = 1;
 		header.banner_size = 2112;
 		header.offset_0x20C = 0x00010000;
 		header.offset_0x218 = 0x0004D084;
 		header.offset_0x21C = 0x0000052C;
 		header.tid_low  = header.gamecode[3] | (header.gamecode[2]<<8) | (header.gamecode[1]<<16) | (header.gamecode[0]<<24);
-		header.tid_high = 0x00030000; //0x00030004 does not work from DSi Menu
+		header.tid_high = titleidHigh;
 		memset(header.age_ratings, 0x80, sizeof(header.age_ratings));
 
 		Sha1Hmac(header.hmac_arm9, fNDS, header.arm9_rom_offset, header.arm9_size);

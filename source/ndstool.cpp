@@ -50,6 +50,8 @@ unsigned int arm9RamAddress = 0;
 unsigned int arm7RamAddress = 0;
 unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
+unsigned int titleidHigh = 0x00030000; //0x00030004 does not work from DSi Menu
+unsigned int scfgExtMask = 0x8307B19F; // enable access to everything
 
 
 /*
@@ -94,7 +96,7 @@ HelpLine helplines[] =
 	{"k",	"Hook ARM7 executable\n-k [file.nds]\nCurrently not tested."},
 	{"f",	"Fix header CRC\n-f [file.nds]\nYou only need this after manual editing."},
 	{"s",	"En/decrypt secure area\n-s[e|E|d] [file.nds]\nEn/decrypt the secure area and\nput/remove card encryption tables and test patterns.\nOptionally add: d for decryption, e/E for encryption.\n(e: Nintendo offsets, E: others)"},
-	{"1",	"List files:\n-l [file.nds]\nGive a list of contained files."},
+	{"l",	"List files:\n-l [file.nds]\nGive a list of contained files."},
 	{"v",	"  Show offsets/sizes\n-v"},
 	{"c",	"Create\n-c [file.nds]"},
 	{"x",	"Extract\n-x [file.nds]"},
@@ -108,7 +110,7 @@ HelpLine helplines[] =
 	{"b",	"  Banner bitmap/text\n-b file.bmp \"text;text;text\"\nThe three lines are shown at different sizes."},
 	{"t",	"  Banner binary\n-t file.bin"},
 	{"h",	"  Header template\n-h file.bin\nUse the header from another ROM as a template."},
-	{"h",	"  Header size\n-h size\nA header size of 0x4000 is default for real cards, 0x200 for homebrew."},
+	{"h",	"  Header size\n-h size\nA header size of 0x4000 is default for real cards and newer homebrew, 0x200 for older homebrew."},
 	{"n",	"  Latency\n-n [L1] [L2]\ndefault=maximum"},
 	{"o",	"  Logo bitmap/binary\n-o file.bmp/file.bin"},
 	{"g",	"  Game info\n-g gamecode [makercode] [title] [rom ver]\nSets game-specific information.\nGame code is 4 characters. Maker code is 2 characters.\nTitle can be up to 12 characters."},
@@ -117,6 +119,8 @@ HelpLine helplines[] =
 	{"e",	"  ARM9 RAM entry\n-e9 address"},
 	{"e",	"  ARM7 RAM entry\n-e7 address"},
 	{"w",	"  Wildcard filemask(s)\n-w [filemask]...\n* and ? are wildcard characters."},
+	{"u",	"  DSi high title ID\n-u tidhigh  (32-bit hex)"},
+	{"z",   "  ARM7 SCFG EXT mask\n-z scfgmask (32-bit hex)"},
 };
 
 /*
@@ -301,6 +305,16 @@ int main(int argc, char *argv[])
 				/*case 'u':	// unique ID file
 					REQUIRED(uniquefilename);
 					break;*/
+
+				case 'u': // DSi title ID high word
+					if (argc > a)
+						titleidHigh = strtoul(argv[++a], 0, 16);
+					break;
+
+				case 'z': // SCFG access flags
+					if (argc > a)
+						scfgExtMask = strtoul(argv[++a], 0, 16);
+					break;
 
 				case 'v':	// verbose
 					for (char *p=argv[a]; *p; p++) if (*p == 'v') verbose++;
