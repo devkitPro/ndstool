@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([ndstool],[2.0.0],[davem@devkitpro.org])
+AC_INIT([ndstool],[2.0.1],[https://github.com/devkitPro/ndstool/issues])
 AC_CONFIG_SRCDIR([source/banner.cpp])
 
 AM_INIT_AUTOMAKE([1.10])
