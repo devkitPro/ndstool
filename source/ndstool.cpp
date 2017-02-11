@@ -42,7 +42,7 @@ char *vhdfilename = 0;
 char *sramfilename = 0;
 int latency1 = 0x1FFF;	//0x8F8;
 int latency2 = 0x3F;	//0x18;
-int romversion = 0;
+unsigned int romversion = 0;
 char endecrypt_option = 0;
 
 int bannertype;
@@ -423,6 +423,10 @@ int main(int argc, char *argv[])
 	if (title && (strlen(title) > 12))
 	{
 		fprintf(stderr, "Title can be no more than 12 characters!\n");
+		return 1;
+	}
+	if (romversion > 255) {
+		fprintf(stderr, "romversion can only be 0 - 255!\n");
 		return 1;
 	}
 

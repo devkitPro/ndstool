@@ -61,6 +61,6 @@ extern char *makercode;
 extern char *gamecode;
 extern int latency1;
 extern int latency2;
-extern int romversion;
+extern unsigned int romversion;
 
 extern const char CompileDate[];

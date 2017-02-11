@@ -401,6 +401,7 @@ void Create()
 	if (title) strncpy(header.title, title, 12);
 	if (gamecode) strncpy(header.gamecode, gamecode, 4);
 	if (makercode) strncpy((char *)header.makercode, makercode, 2);
+	header.romversion = (romversion & 0xff);
 
 	// --------------------------
 
