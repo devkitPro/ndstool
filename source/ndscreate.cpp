@@ -9,6 +9,7 @@
 #include "ndstree.h"
 #include "elf.h"
 #include "sha1.h"
+#include "crc.h"
 
 unsigned int arm9_align = 0x1FF;
 unsigned int arm7_align = 0x1FF;
@@ -681,12 +682,13 @@ void Create()
 		}
 	}
 
+	header.rom_control_info1 = 0x00586000;
+	header.rom_control_info2 = 0x001808F8;
+
 	// Set flags in DSi extended header
 	if (header.unitcode & 2)
 	{
 		header.dsi_flags = 0x3;
-		header.rom_control_info1 = 0x00586000;
-		header.rom_control_info2 = 0x001808F8;
 		header.rom_control_info3 = 0x051E;
 		header.offset_0x88 = 0x0004D0B8;
 		header.offset_0x8C = 0x00000544;
@@ -750,6 +752,9 @@ void Create()
 
 	// fix up header CRCs and write header
 	header.logo_crc = CalcLogoCRC(header);
+
+	if (header.arm9_rom_offset < 0x8000) header.secure_area_crc = FCalcCrc16(fNDS, header.arm9_rom_offset, 0x8000 - header.arm9_rom_offset);
+
 	header.header_crc = CalcHeaderCRC(header);
 
 	if (header.unitcode & 2)
