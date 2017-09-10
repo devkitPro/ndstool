@@ -692,6 +692,14 @@ void Create()
 	// Set flags in DSi extended header
 	if (header.unitcode & 2)
 	{
+		newfilesize = (ftell(fNDS) + file_align) & ~file_align;
+		header.total_rom_size = newfilesize;
+
+		if (newfilesize != ftell(fNDS) ) {
+			fseek(fNDS, newfilesize-1, SEEK_SET);
+			fputc(0, fNDS);
+		}
+
 		header.dsi_flags = 0x01;
 		header.rom_control_info3 = 0x051E;
 		header.offset_0x88 = 0x0004D0B8;
@@ -734,14 +742,6 @@ void Create()
 		Sha1Hmac(header.hmac_arm9i, fNDS, header.dsi9_rom_offset, header.dsi9_size);
 		Sha1Hmac(header.hmac_arm7i, fNDS, header.dsi7_rom_offset, header.dsi7_size);
 		memset(header.rsa_signature, 0xFF, 0x80);
-
-		newfilesize = (ftell(fNDS) + file_align) & ~file_align;
-		header.total_rom_size = newfilesize;
-
-		if (newfilesize != ftell(fNDS) ) {
-			fseek(fNDS, newfilesize-1, SEEK_SET);
-			fputc(0, fNDS);
-		}
 	}
 
 	// calculate device capacity
