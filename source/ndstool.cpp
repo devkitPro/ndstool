@@ -51,7 +51,9 @@ unsigned int arm7RamAddress = 0;
 unsigned int arm9Entry = 0;
 unsigned int arm7Entry = 0;
 unsigned int titleidHigh = 0x00030000; //0x00030004 does not work from DSi Menu
-unsigned int scfgExtMask = 0x8307B19F; // enable access to everything
+unsigned int scfgExtMask = 0x80040407; // enable access to everything
+unsigned int accessControl = 0x00000138;
+unsigned int appFlags = 0x01;
 
 
 /*
@@ -121,6 +123,8 @@ HelpLine helplines[] =
 	{"w",	"  Wildcard filemask(s)\n-w [filemask]...\n* and ? are wildcard characters."},
 	{"u",	"  DSi high title ID\n-u tidhigh  (32-bit hex)"},
 	{"z",   "  ARM7 SCFG EXT mask\n-z scfgmask (32-bit hex)"},
+	{"a",   "  DSi access flags\n-a accessflags (32-bit hex)"},
+	{"p",   "  DSi application flags\n-p appflags (8-bit hex)"},
 };
 
 /*
@@ -314,6 +318,16 @@ int main(int argc, char *argv[])
 				case 'z': // SCFG access flags
 					if (argc > a)
 						scfgExtMask = strtoul(argv[++a], 0, 16);
+					break;
+
+				case 'a': // DSi access control flags
+					if (argc > a)
+						accessControl = strtoul(argv[++a], 0, 16);
+					break;
+
+				case 'p': // DSi application flags
+					if (argc > a)
+						appFlags = strtoul(argv[++a], 0, 16) & 0xFF;
 					break;
 
 				case 'v':	// verbose

@@ -725,9 +725,9 @@ void Create()
 		header.mbk9_wramcnt_setting = (0x03<<24) | 0x00000F;
 
 		header.region_flags = 0xFFFFFFFF;
-		header.access_control = 0x00000138;
+		header.access_control = accessControl;
 		header.scfg_ext_mask = scfgExtMask;
-		header.appflags = 1;
+		header.appflags = appFlags;
 		header.banner_size = 2112;
 		header.offset_0x20C = 0x00010000;
 		header.offset_0x218 = 0x0004D084;

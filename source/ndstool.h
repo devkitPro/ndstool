@@ -56,6 +56,8 @@ extern unsigned int arm9Entry;
 extern unsigned int arm7Entry;
 extern unsigned int titleidHigh;
 extern unsigned int scfgExtMask;
+extern unsigned int accessControl;
+extern unsigned int appFlags;
 extern char *title;
 extern char *makercode;
 extern char *gamecode;
