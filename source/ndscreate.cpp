@@ -656,6 +656,10 @@ void Create()
 			// This is a DSi application!
 			header.unitcode = 2;
 
+			// Flag as DSi exclusive if higher TID is not the default
+			if (titleidHigh != 0x00030000)
+				header.unitcode |= 1;
+
 			// Flag as DSi exclusive if ARM9 is too big
 			if (header.arm9_size > 0x3BFE00)
 				header.unitcode |= 1;
@@ -688,7 +692,7 @@ void Create()
 	// Set flags in DSi extended header
 	if (header.unitcode & 2)
 	{
-		header.dsi_flags = 0x3;
+		header.dsi_flags = 0x01;
 		header.rom_control_info3 = 0x051E;
 		header.offset_0x88 = 0x0004D0B8;
 		header.offset_0x8C = 0x00000544;
