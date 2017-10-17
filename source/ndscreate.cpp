@@ -11,6 +11,8 @@
 #include "sha1.h"
 #include "crc.h"
 
+#include <algorithm>
+
 unsigned int arm9_align = 0x1FF;
 unsigned int arm7_align = 0x1FF;
 unsigned int fnt_align = 0x1FF;		// 0x3 0x1FF
@@ -692,7 +694,8 @@ void Create()
 	// Set flags in DSi extended header
 	if (header.unitcode & 2)
 	{
-		newfilesize = (ftell(fNDS) + file_align) & ~file_align;
+		newfilesize = std::max( ftell(fNDS) , static_cast<long>(header.banner_offset + 0x23c0));
+		newfilesize = (newfilesize + file_align) & ~file_align;
 		header.total_rom_size = newfilesize;
 
 		if (newfilesize != ftell(fNDS) ) {
