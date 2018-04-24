@@ -14,6 +14,7 @@
 #include <algorithm>
 
 unsigned int arm9_align = 0x1FF;
+unsigned int arm7_min = 0x8000;
 unsigned int arm7_align = 0x1FF;
 unsigned int fnt_align = 0x1FF;		// 0x3 0x1FF
 unsigned int fat_align = 0x1FF;		// 0x3 0x1FF
@@ -470,7 +471,7 @@ void Create()
 	// fseek(fNDS, 1388772, SEEK_CUR);		// test for ASME
 
 	// ARM7 binary
-	header.arm7_rom_offset = (ftell(fNDS) + arm7_align) &~ arm7_align;
+	header.arm7_rom_offset = std::max((ftell(fNDS) + arm7_align) &~ arm7_align, static_cast<long>(arm7_min));
 	fseek(fNDS, header.arm7_rom_offset, SEEK_SET);
 
 	// if (arm7filename)
