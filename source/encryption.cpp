@@ -476,7 +476,7 @@ void EnDecryptSecureArea(char *ndsfilename, char endecrypt_option)
 	bool do_decrypt = (endecrypt_option == 'd');
 	bool do_encrypt = (endecrypt_option == 'e') || (endecrypt_option == 'E');
 	unsigned int rounds_offsets = (endecrypt_option == 'E') ? 0x2000 : 0x1600;
-	unsigned int sbox_offsets = (endecrypt_option == 'E') ? 0x2400 : 0x2800;
+	unsigned int sbox_offsets = (endecrypt_option == 'E') ? 0x2400 : 0x1c00;
 
 	// check if ROM is already encrypted
 	if (romType == ROMTYPE_NDSDUMPED)
