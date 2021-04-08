@@ -1,0 +1,106 @@
+.TH NDSTOOL 1 "2020 June 30" "2.1.2"
+.SH NAME
+ndstool - Nintendo DS rom tool.
+.SH SYNOPSIS
+.B ndstool
+[options] [rom.nds]
+.SH DESCRIPTION
+A tool to analyse and manipulate NDS roms.
+.SH OPTIONS
+.B -?
+Show the help message or help for an option.
+
+.B -i
+Display information about a ROM.
+
+.B -v
+Display further information about a rom, i.e. "verbose".
+
+.B -k
+Hook ARM7 executable.
+
+.B -f
+Fix header CRC.
+
+.B -s
+Encrypt or decrypt secure area.
+
+.B -l
+List files in a ROM.
+
+.B -lv
+Show offset/sizes.
+
+.B -c
+Create ROM.
+
+.B -x
+Extract ROM.
+
+.B -9
+ARM9 executable.
+
+.B -7
+ARM7 executable.
+
+.B -y9
+ARM9 overlay table.
+
+.B -y7
+ARM7 overlay table.
+
+.B -d
+Data files.
+
+.B -y
+Overlay files.
+
+.B -b
+Banner bitmap/text.
+
+.B -t
+Banner binary.
+
+.B -h
+Header template / header size.
+
+.B -n
+Latency.
+
+.B -o
+Logo bitmap/binary.
+
+.B -g
+Game info.
+
+.B -r9
+ARM9 RAM address.
+
+.B -r7
+ARM7 RAM address.
+
+.B -e9
+ARM9 RAM entry.
+
+.B -e7
+ARM7 RAM entry.
+
+.B -w
+Wildcard filemask(s).
+
+.B -u
+DSi high title ID (32-bit hex).
+
+.B -z
+ARM7 SCFG EXT mask (32-bit hex).
+
+.B -a
+DSi access flags (32-bit hex).
+
+.B -p
+DSi application flags (8-bit hex).
+
+.SH AUTHORS
+
+.SH COPYRIGHT
+Copyright \(co 2021 devkitPro. Licensed under the GNU General Public License v3.0 (GPLv3). For more information on the license, see https://www.gnu.org/licenses/gpl-3.0.en.html.
