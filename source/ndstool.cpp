@@ -466,7 +466,29 @@ int main(int argc, char *argv[])
 			case ACTION_EXTRACT:
 				fNDS = fopen(ndsfilename, "rb");
 				if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
-				fread(&header, 512, 1, fNDS);
+				fread(&header, sizeof(Header), 1, fNDS);
+				if (header.unitcode & 2) {
+					bannersize = header.banner_size;
+				} else {
+					fseek(fNDS, header.banner_offset, SEEK_SET);
+					unsigned short bannerversion;
+					fread(&bannerversion, 2, 1, fNDS);
+					switch(bannerversion) {
+						case 0x0001:
+						default:
+							bannersize = 0x840;
+							break;
+						case 0x0002:
+							bannersize = 0x940;
+							break;
+						case 0x0003:
+							bannersize = 0xA40;
+							break;
+						case 0x0103:
+							bannersize = 0x23C0;
+							break;
+					}
+				}
 				fclose(fNDS);
 
 			printf("9i %s, 7i %s, unitcode %x\n",arm9ifilename,arm7ifilename, header.unitcode);
