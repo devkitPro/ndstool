@@ -31,6 +31,7 @@ char *arm7ovltablefilename = 0;
 char *arm9ovltablefilename = 0;
 char *bannerfilename = 0;
 char *bannertext = 0;
+long bannersize = 0x840;
 //bool compatibility = false;
 char *headerfilename_or_size = 0;
 //char *uniquefilename = 0;
@@ -475,7 +476,7 @@ int main(int argc, char *argv[])
 					if (arm9ifilename) Extract(arm9ifilename, true, 0x1C0, true, 0x1CC, true);
 					if (arm7ifilename) Extract(arm7ifilename, true, 0x1D0, true, 0x1DC);
 				}
-				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
+				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, bannersize);
 				if (headerfilename_or_size) Extract(headerfilename_or_size, false, 0x0, false, 0x200);
 				if (logofilename) Extract(logofilename, false, 0xC0, false, 156);	// *** bin only
 				if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
