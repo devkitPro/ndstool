@@ -55,6 +55,7 @@ unsigned int arm7Entry = 0;
 unsigned int titleidHigh = 0x00030000; // DSi-enhanced gamecard. 0x00030004 (DSiWare) cannot be loaded as a card from DSi Menu
 unsigned int scfgExtMask = 0x80040407; // enable access to everything
 unsigned int accessControl = 0x00000138;
+unsigned int mbkArm7WramMapAddress = 0;
 unsigned int appFlags = 0x01;
 
 
@@ -127,6 +128,7 @@ HelpLine helplines[] =
 	{"z",   "  ARM7 SCFG EXT mask\n-z scfgmask (32-bit hex)"},
 	{"a",   "  DSi access flags\n-a accessflags (32-bit hex)"},
 	{"p",   "  DSi application flags\n-p appflags (8-bit hex)"},
+	{"q",   "  DSi ARM7 WRAM_A map address\n-m address (32-bit hex)"},
 };
 
 /*
@@ -330,6 +332,11 @@ int main(int argc, char *argv[])
 				case 'p': // DSi application flags
 					if (argc > a)
 						appFlags = strtoul(argv[++a], 0, 16) & 0xFF;
+					break;
+
+				case 'q': // DSi ARM7 WRAM_A map address
+					if (argc > a)
+						mbkArm7WramMapAddress = strtoul(argv[++a], 0, 16);
 					break;
 
 				case 'v':	// verbose

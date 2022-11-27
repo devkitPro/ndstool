@@ -443,7 +443,7 @@ void Create()
 
 		unsigned int size = 0;
 		if (is_arm9_elf)
-			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, false);
+			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, NULL, false);
 		else
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
@@ -494,7 +494,7 @@ void Create()
 		unsigned int size = 0;
 
 		if (is_arm7_elf)
-			CopyFromElf(arm7filename, &entry_address, &ram_address, &size, false);
+			CopyFromElf(arm7filename, &entry_address, &ram_address, &size, NULL, false);
 		else
 			CopyFromBin(arm7filename, &size);
 
@@ -629,7 +629,7 @@ void Create()
 
 			unsigned int ram_address = 0;
 			unsigned int size = 0;
-			CopyFromElf(arm9filename, NULL, &ram_address, &size, true);
+			CopyFromElf(arm9filename, NULL, &ram_address, &size, NULL, true);
 			if (!size)
 			{
 				sections--;
@@ -652,7 +652,7 @@ void Create()
 
 			unsigned int ram_address = 0;
 			unsigned int size = 0;
-			CopyFromElf(arm7filename, NULL, &ram_address, &size, true);
+			CopyFromElf(arm7filename, NULL, &ram_address, &size, &mbkArm7WramMapAddress, true);
 			if (!size)
 			{
 				sections--;
@@ -732,8 +732,14 @@ void Create()
 		header.arm9_mbk_setting[0] = 0x00000000;
 		header.arm9_mbk_setting[1] = 0x07C03740;
 		header.arm9_mbk_setting[2] = 0x07403700;
-		// Set correct MBK settings for WRAM_A (starts at 0x3000000 in card apps, 0x37C0000 otherwise)
-		header.arm7_mbk_setting[0] = (header.unitcode & 1) ? 0x080037C0 : 0x00403000;
+		if (mbkArm7WramMapAddress != 0) {
+			// Configure 256KB WRAM_A starting at the specified RAM address
+			unsigned int mbk_offset = (mbkArm7WramMapAddress - 0x03000000) / 0x10000;
+			header.arm7_mbk_setting[0] = (mbk_offset << 4) | (0x3 << 12) | ((mbk_offset + 4) << 20);
+		} else {
+			// Set correct MBK settings for WRAM_A (starts at 0x3000000 in card apps, 0x37C0000 otherwise)
+			header.arm7_mbk_setting[0] = (header.unitcode & 1) ? 0x080037C0 : 0x00403000;
+		}
 		header.arm7_mbk_setting[1] = 0x07C03740;
 		header.arm7_mbk_setting[2] = 0x07403700;
 		header.mbk9_wramcnt_setting = (0x03<<24) | 0x00000F;

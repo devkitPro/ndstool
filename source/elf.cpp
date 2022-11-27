@@ -117,11 +117,12 @@ void ElfReadHdr(FILE *fp, Elf32_Ehdr *hdr, Elf32_Phdr **phdr) {
  *              unsigned int *entry,       a pointer to place the entry point at.
  *              unsigned int *ram_address, a pointer to place the RAM address at.
  *              unsigned int *size,        a pointer to place the data size at.
+ *              unsigned int *wram_address,a pointer to map DSi exclusive ARM7 WRAM at.
  *              bool is_twl,               true if we want to copy TWL sections.
  */
 int CopyFromElf(char *elfFilename,         unsigned int *entry,
                 unsigned int *ram_address, unsigned int *size,
-                bool is_twl)
+                unsigned int *wram_address, bool is_twl)
 {
 	FILE        *in;
 	Elf32_Ehdr   header;
@@ -149,10 +150,6 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		/* Skip non-loadable segments. */
 		if(p_headers[i].p_type != PT_LOAD)
 			continue;
-    
-		/* Skip BSS segments. */
-		if(!p_headers[i].p_filesz)
-			continue;
 
 		/* Skip non-static sections. */
 		if(p_headers[i].p_flags&0x200000)
@@ -161,7 +158,15 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		/* Skip non-TWL/non-NTR sections. */
 		if(is_twl == !(p_headers[i].p_flags&0x100000))
 			continue;
-    
+
+		/* Detect address of DSi exclusive ARM7 WRAM bank. */
+		if(wram_address && !*wram_address && p_headers[i].p_vaddr >= 0x03000000 && p_headers[i].p_vaddr < 0x037F8000)
+			*wram_address = p_headers[i].p_vaddr;
+
+		/* Skip BSS segments. */
+		if(!p_headers[i].p_filesz)
+			continue;
+
 		/* Use first found address. */
 		if(!*ram_address)
 			*ram_address = p_headers[i].p_paddr;

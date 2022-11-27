@@ -59,6 +59,7 @@ extern unsigned int titleidHigh;
 extern unsigned int scfgExtMask;
 extern unsigned int accessControl;
 extern unsigned int appFlags;
+extern unsigned int mbkArm7WramMapAddress;
 extern char *title;
 extern char *makercode;
 extern char *gamecode;
