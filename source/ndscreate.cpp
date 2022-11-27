@@ -91,9 +91,9 @@ bool HasElfHeader(char *filename)
 
 	FILE *fi = fopen(filename, "rb");
 	if (!fi) return false;
-	int bytesread = fread(hdr,1,4,fi);
+	size_t bytesread = fread(hdr,1,4,fi);
 	fclose(fi);
-	if(bytesread<=0) return false;
+	if(bytesread==0) return false;
 	if(strncmp(hdr,"\x7f""ELF",4) == 0) return true;
 	return false;
 }
@@ -105,12 +105,12 @@ int CopyFromBin(char *binFilename, unsigned int *size = 0, unsigned int *size_wi
 {
 	FILE *fi = fopen(binFilename, "rb");
 	if (!fi) { fprintf(stderr, "Cannot open file '%s'.\n", binFilename); exit(1); }
-	unsigned int _size = 0;
+	size_t _size = 0;
+	unsigned char buffer[64*1024];
 	while (1)
 	{
-		unsigned char buffer[1024];
-		int bytesread = fread(buffer, 1, sizeof(buffer), fi);
-		if (bytesread <= 0) break;
+		size_t bytesread = fread(buffer, 1, sizeof(buffer), fi);
+		if (bytesread == 0) break;
 		fwrite(buffer, 1, bytesread, fNDS);
 		_size += bytesread;
 	}

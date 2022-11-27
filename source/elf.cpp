@@ -55,16 +55,20 @@ void ElfWriteZeros(size_t n, FILE *fp) {
  *              FILE  *out, the file pointer to write to.
  */
 void ElfWriteData(size_t n, FILE *in, FILE *out) {
-	int c;
-  
-	while(n--) {
-		c = fgetc(in);
-    
-		if(c == EOF)
+	unsigned char buffer[64*1024];
+
+	while(n) {
+		size_t cur_size = n > sizeof(buffer) ? sizeof(buffer) : n;
+
+		size_t read = fread(buffer, 1, cur_size, in);
+		if (read != cur_size)
 			die("failed to read from input file\n");
-    
-		if(fputc(c, out) == EOF)
+
+		size_t written = fwrite(buffer, 1, cur_size, out);
+		if (written != cur_size)
 			die("failed to write to file\n");
+
+		n -= cur_size;
 	}
 }
 
