@@ -37,17 +37,6 @@
 
 extern FILE *fNDS;
 
-/* Function:    void ElfWriteZeros(size_t n, FILE *fp)
- * Description: Writes n zeroes to a file.
- * Parameters:  size_t n,  the number of zeroes to write.
- *              FILE  *fp, the file pointer to write to.
- */
-void ElfWriteZeros(size_t n, FILE *fp) {
-	while(n--)
-		if(fputc('\0', fp) == EOF)
-			die("!!failed to write to file \n");
-}
-
 /* Function:    void ElfWriteData(size_t n, FILE *fp)
  * Description: Writes data from one file to another.
  * Parameters:  size_t n,   the number of bytes to write.
@@ -138,7 +127,8 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 	Elf32_Ehdr   header;
 	Elf32_Phdr  *p_headers;
 	unsigned int i;
-  
+	unsigned int expected_address = 0;
+
 	*ram_address = 0;
 
 	/* Open ELF file. */
@@ -163,7 +153,11 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		/* Skip BSS segments. */
 		if(!p_headers[i].p_filesz)
 			continue;
-    
+
+		/* Skip non-static sections. */
+		if(p_headers[i].p_flags&0x200000)
+			continue;
+
 		/* Skip non-TWL/non-NTR sections. */
 		if(is_twl == !(p_headers[i].p_flags&0x100000))
 			continue;
@@ -171,16 +165,21 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		/* Use first found address. */
 		if(!*ram_address)
 			*ram_address = p_headers[i].p_paddr;
-    
+		else if(p_headers[i].p_paddr != expected_address) {
+			char errormsg[512];
+			snprintf(errormsg,512,"PHDR %u paddr expected at 0x%08X, got 0x%08X", i, expected_address, p_headers[i].p_paddr);
+			die(errormsg);
+		}
+
 		/* Seek to segment offset. */
 		if(fseek(in, p_headers[i].p_offset, SEEK_SET))
 			die("failed to seek to program header segment\n");
-    
-    	/* Write file image and pad with zeros. */
-    	ElfWriteData(p_headers[i].p_filesz, in, fNDS);
-		ElfWriteZeros(p_headers[i].p_memsz - p_headers[i].p_filesz, fNDS);
-    
-		*size += p_headers[i].p_memsz;
+
+		/* Write file image. */
+		ElfWriteData(p_headers[i].p_filesz, in, fNDS);
+
+		*size += p_headers[i].p_filesz;
+		expected_address = p_headers[i].p_paddr + p_headers[i].p_filesz;
 	}
   
 	/* Clean up. */
