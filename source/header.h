@@ -85,7 +85,7 @@ struct Header
 	unsigned_int dsi9_ram_address;
 	unsigned_int dsi9_size;
 	unsigned_int dsi7_rom_offset;
-	unsigned_int offset_0x1D4;
+	unsigned_int device_list_ram_address;
 	unsigned_int dsi7_ram_address;
 	unsigned_int dsi7_size;
 

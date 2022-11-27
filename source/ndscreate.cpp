@@ -449,6 +449,15 @@ void Create()
 		header.arm9_entry_address = entry_address;
 		header.arm9_ram_address = ram_address;
 		header.arm9_size = header.arm9_size + ((size + 3) &~ 3);
+
+		if (header.rom_header_size > 0x200 && (entry_address - ram_address) == 0x800 && header.arm9_size < 0x4000)
+		{
+			// Pad the arm9 binary to 16kb
+			unsigned int needed_padding = 0x4000 - header.arm9_size;
+			header.arm9_size = 0x4000;
+			fseek(fNDS, needed_padding-1, SEEK_CUR);
+			fputc(0, fNDS);
+		}
 	}
 
 	// ARM9 overlay table
@@ -709,9 +718,6 @@ void Create()
 
 		header.dsi_flags = 0x01;
 		header.rom_control_info3 = 0x051E;
-		header.offset_0x88 = 0x0004D0B8;
-		header.offset_0x8C = 0x00000544;
-		header.offset_0x90 = 0x00160016;
 
 		static const u8 global_mbk[5][4] =
 		{
@@ -726,7 +732,8 @@ void Create()
 		header.arm9_mbk_setting[0] = 0x00000000;
 		header.arm9_mbk_setting[1] = 0x07C03740;
 		header.arm9_mbk_setting[2] = 0x07403700;
-		header.arm7_mbk_setting[0] = 0x00403000;
+		// Set correct MBK settings for WRAM_A (starts at 0x3000000 in card apps, 0x37C0000 otherwise)
+		header.arm7_mbk_setting[0] = (header.unitcode & 1) ? 0x080037C0 : 0x00403000;
 		header.arm7_mbk_setting[1] = 0x07C03740;
 		header.arm7_mbk_setting[2] = 0x07403700;
 		header.mbk9_wramcnt_setting = (0x03<<24) | 0x00000F;
@@ -735,9 +742,8 @@ void Create()
 		header.access_control = accessControl;
 		header.scfg_ext_mask = scfgExtMask;
 		header.appflags = appFlags;
+		header.device_list_ram_address = 0x02FFDC00;
 		header.offset_0x20C = 0x00010000;
-		header.offset_0x218 = 0x0004D084;
-		header.offset_0x21C = 0x0000052C;
 		header.tid_low  = header.gamecode[3] | (header.gamecode[2]<<8) | (header.gamecode[1]<<16) | (header.gamecode[0]<<24);
 		header.tid_high = titleidHigh;
 		memset(header.age_ratings, 0x80, sizeof(header.age_ratings));
