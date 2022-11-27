@@ -10,6 +10,7 @@
 #include "ndsextract.h"
 #include "hook.h"
 #include "encryption.h"
+#include "banner.h"
 
 /*
  * Variables
@@ -31,6 +32,7 @@ char *arm7ovltablefilename = 0;
 char *arm9ovltablefilename = 0;
 char *bannerfilename = 0;
 char *bannertext = 0;
+unsigned int bannersize = 0x840;
 //bool compatibility = false;
 char *headerfilename_or_size = 0;
 //char *uniquefilename = 0;
@@ -462,27 +464,38 @@ int main(int argc, char *argv[])
 				FixHeaderCRC(ndsfilename);
 				break;
 
-			case ACTION_EXTRACT:
+			case ACTION_EXTRACT: {
+				unsigned int headersize = 0x200;
 				fNDS = fopen(ndsfilename, "rb");
 				if (!fNDS) { fprintf(stderr, "Cannot open file '%s'.\n", ndsfilename); exit(1); }
-				fread(&header, 512, 1, fNDS);
+				fread(&header, 1, headersize, fNDS);
+				if (header.unitcode & 2) { // DSi application
+					fread((char*)&header + headersize, 1, sizeof(Header) - headersize, fNDS);
+					headersize = sizeof(Header);
+					bannersize = header.banner_size;
+				} else {
+					fseek(fNDS, header.banner_offset, SEEK_SET);
+					unsigned_short version;
+					fread(&version, sizeof(version), 1, fNDS);
+					bannersize = CalcBannerSize(version);
+				}
 				fclose(fNDS);
 
-			printf("9i %s, 7i %s, unitcode %x\n",arm9ifilename,arm7ifilename, header.unitcode);
 				if (arm9filename) Extract(arm9filename, true, 0x20, true, 0x2C, true);
 				if (arm7filename) Extract(arm7filename, true, 0x30, true, 0x3C);
 				if (header.unitcode & 2) {
 					if (arm9ifilename) Extract(arm9ifilename, true, 0x1C0, true, 0x1CC, true);
 					if (arm7ifilename) Extract(arm7ifilename, true, 0x1D0, true, 0x1DC);
 				}
-				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, 0x840);
-				if (headerfilename_or_size) Extract(headerfilename_or_size, false, 0x0, false, 0x200);
+				if (bannerfilename) Extract(bannerfilename, true, 0x68, false, bannersize);
+				if (headerfilename_or_size) Extract(headerfilename_or_size, false, 0x0, false, headersize);
 				if (logofilename) Extract(logofilename, false, 0xC0, false, 156);	// *** bin only
 				if (arm9ovltablefilename) Extract(arm9ovltablefilename, true, 0x50, true, 0x54);
 				if (arm7ovltablefilename) Extract(arm7ovltablefilename, true, 0x58, true, 0x5C);
 				if (overlaydir) ExtractOverlayFiles();
 				if (filerootdir) ExtractFiles(ndsfilename);
 				break;
+			}
 
 			case ACTION_CREATE:
 				Create();

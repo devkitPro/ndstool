@@ -545,7 +545,6 @@ void Create()
 		if (bannerfilename)
 		{
 			header.banner_offset = (header.fat_offset + header.fat_size + banner_align) &~ banner_align;
-			file_top = header.banner_offset + 0x840;
 			fseek(fNDS, header.banner_offset, SEEK_SET);
 			if (bannertype == BANNER_IMAGE)
 			{
@@ -563,13 +562,17 @@ void Create()
 			}
 			else
 			{
-				CopyFromBin(bannerfilename, 0);
+				CopyFromBin(bannerfilename, &bannersize);
 			}
+
+			file_top = header.banner_offset + bannersize;
+			header.banner_size = bannersize;
 		}
 		else
 		{
 			file_top = header.fat_offset + header.fat_size;
 			header.banner_offset = 0;
+			header.banner_size = 0;
 		}
 
 		file_end = file_top;	// no file data as yet
@@ -732,7 +735,6 @@ void Create()
 		header.access_control = accessControl;
 		header.scfg_ext_mask = scfgExtMask;
 		header.appflags = appFlags;
-		header.banner_size = 2112;
 		header.offset_0x20C = 0x00010000;
 		header.offset_0x218 = 0x0004D084;
 		header.offset_0x21C = 0x0000052C;

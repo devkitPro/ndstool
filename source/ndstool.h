@@ -46,6 +46,7 @@ extern char *arm9ovltablefilename;
 extern char *bannerfilename;
 extern char *bannertext;
 extern int bannertype;
+extern unsigned int bannersize;
 //extern bool compatibility;
 extern char *headerfilename_or_size;
 extern char *uniquefilename;

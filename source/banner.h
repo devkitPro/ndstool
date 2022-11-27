@@ -14,6 +14,18 @@ struct Banner
 
 extern const char *bannerLanguages[];
 
+static inline unsigned int CalcBannerSize(unsigned short version)
+{
+	switch (version)
+	{
+		default:     version = 1; /* fallthrough */
+		case 0x0001:
+		case 0x0002:
+		case 0x0003: return 0x840 + 0x100 * (version - 1);
+		case 0x0103: return 0x23C0;
+	}
+};
+
 int InsertTitleString(char *String, FILE *file);
 unsigned short CalcBannerCRC(Banner &banner);
 void IconFromBMP();
