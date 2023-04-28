@@ -26,16 +26,35 @@
 #include <string.h>
 
 /* Project header files. */
+#include "ndstool.h"
 #include "elf.h"
 
+std::vector<std::pair<unsigned_int, unsigned_int>> overlay_fat_entries;
+
+struct OvlTableEntry {
+	unsigned_int overlay_id;
+	unsigned_int ram_address;
+	unsigned_int load_size;
+	unsigned_int bss_size;
+	unsigned_int ctors_start;
+	unsigned_int ctors_end;
+	unsigned_int file_id;
+	unsigned_int reserved;
+};
+
+struct OvlTableEntryShort {
+	unsigned_int bss_size;
+	unsigned_int ctors_start;
+	unsigned_int ctors_end;
+	unsigned_int reserved;
+};
+
 /* Simple assertion macro. */
-#define die(msg) \
+#define die(...) \
 	do {\
-		fprintf(stderr, "%s", msg);\
+		fprintf(stderr, __VA_ARGS__);\
 		exit(EXIT_FAILURE);\
 	} while(0)
-
-extern FILE *fNDS;
 
 /* Function:    void ElfWriteData(size_t n, FILE *fp)
  * Description: Writes data from one file to another.
@@ -118,11 +137,13 @@ void ElfReadHdr(FILE *fp, Elf32_Ehdr *hdr, Elf32_Phdr **phdr) {
  *              unsigned int *ram_address, a pointer to place the RAM address at.
  *              unsigned int *size,        a pointer to place the data size at.
  *              unsigned int *wram_address,a pointer to map DSi exclusive ARM7 WRAM at.
+ *              bool *has_overlays,        a pointer to place the "has overlays" flag at.
  *              bool is_twl,               true if we want to copy TWL sections.
  */
 int CopyFromElf(char *elfFilename,         unsigned int *entry,
                 unsigned int *ram_address, unsigned int *size,
-                unsigned int *wram_address, bool is_twl)
+                unsigned int *wram_address, bool *has_overlays,
+                bool is_twl)
 {
 	FILE        *in;
 	Elf32_Ehdr   header;
@@ -131,15 +152,13 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 	unsigned int expected_address = 0;
 
 	*ram_address = 0;
+	if (has_overlays) *has_overlays = false;
 
 	/* Open ELF file. */
 	in = fopen(elfFilename, "rb");
-	if(!in) {
-		char errormsg[512];
-		snprintf(errormsg,512,"failed to open input file: '%s'\n",elfFilename);
-		die(errormsg);
-	}
-  
+	if(!in)
+		die("failed to open input file: '%s'\n",elfFilename);
+
 	/* Read in header. */
 	ElfReadHdr(in, &header, &p_headers);
   
@@ -151,9 +170,11 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		if(p_headers[i].p_type != PT_LOAD)
 			continue;
 
-		/* Skip non-static sections. */
-		if(p_headers[i].p_flags&0x200000)
+		/* Skip overlay sections. */
+		if(p_headers[i].p_flags&0x200000) {
+			if (has_overlays) *has_overlays = true;
 			continue;
+		}
 
 		/* Skip non-TWL/non-NTR sections. */
 		if(is_twl == !(p_headers[i].p_flags&0x100000))
@@ -171,9 +192,7 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		if(!*ram_address)
 			*ram_address = p_headers[i].p_paddr;
 		else if(p_headers[i].p_paddr != expected_address) {
-			char errormsg[512];
-			snprintf(errormsg,512,"PHDR %u paddr expected at 0x%08X, got 0x%08X", i, expected_address, p_headers[i].p_paddr);
-			die(errormsg);
+			die("PHDR %u paddr expected at 0x%08X, got 0x%08X\n", i, expected_address, p_headers[i].p_paddr);
 		}
 
 		/* Seek to segment offset. */
@@ -192,4 +211,110 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 	fclose(in);
   
 	return 0;
+}
+
+void CopyOverlaysFromElf(const char* elfFilename, bool is_arm9)
+{
+	/* Open ELF file. */
+	FILE* in = fopen(elfFilename, "rb");
+	if(!in)
+		die("failed to open input file: '%s'\n",elfFilename);
+
+	/* Read in header. */
+	Elf32_Ehdr elf_header;
+	Elf32_Phdr* p_headers;
+	ElfReadHdr(in, &elf_header, &p_headers);
+
+	int ovl_id = -1;
+	unsigned num_ovls = 0;
+	OvlTableEntry* ovl_table = NULL;
+
+	uint32_t cur_offset = (ftell(fNDS) + 0x1ff) &~ 0x1ff;
+	uint32_t table_offset = cur_offset;
+
+	/* Iterate over each program header. */
+	for (unsigned i = 0; i < elf_header.e_phnum; i ++) {
+		/* Skip non-loadable segments. */
+		if (p_headers[i].p_type != PT_LOAD)
+			continue;
+
+		/* Skip non-overlay sections. */
+		if (!(p_headers[i].p_flags&0x200000))
+			continue;
+
+		uint32_t cur_size = 0;
+
+		if (ovl_id < 0) {
+			num_ovls = p_headers[i].p_filesz / sizeof(OvlTableEntryShort);
+			if (!num_ovls) die("overlay table is empty!\n");
+
+			ovl_table = (OvlTableEntry*)calloc(num_ovls, sizeof(OvlTableEntry));
+			if (!ovl_table) die("out of mem\n");
+
+			OvlTableEntryShort* tbl_short = (OvlTableEntryShort*)malloc(p_headers[i].p_filesz);
+			if (!tbl_short) die("out of mem\n");
+
+			/* Seek to segment offset. */
+			if (fseek(in, p_headers[i].p_offset, SEEK_SET))
+				die("failed to seek to overlay table data\n");
+
+			if (fread(tbl_short, p_headers[i].p_filesz, 1, in) != 1)
+				die("failed to read overlay table\n");
+
+			for (unsigned j = 0; j < num_ovls; j ++) {
+				ovl_table[j].overlay_id = j;
+				ovl_table[j].bss_size = tbl_short[j].bss_size;
+				ovl_table[j].ctors_start = tbl_short[j].ctors_start;
+				ovl_table[j].ctors_end = tbl_short[j].ctors_end;
+				ovl_table[j].reserved = tbl_short[j].reserved;
+			}
+
+			free(tbl_short);
+
+			cur_size = num_ovls*sizeof(OvlTableEntry);
+			if (is_arm9) {
+				header.arm9_overlay_offset = table_offset;
+				header.arm9_overlay_size = cur_size;
+			} else {
+				header.arm7_overlay_offset = table_offset;
+				header.arm7_overlay_size = cur_size;
+			}
+
+		} else if (ovl_id < num_ovls) {
+			ovl_table[ovl_id].ram_address = p_headers[i].p_vaddr;
+			ovl_table[ovl_id].load_size = p_headers[i].p_filesz;
+
+			if (p_headers[i].p_filesz) {
+				/* Add FAT entry */
+				cur_size = p_headers[i].p_filesz;
+				ovl_table[ovl_id].file_id = overlay_fat_entries.size();
+				overlay_fat_entries.emplace_back(cur_offset, cur_offset + cur_size);
+
+				/* Seek to segment offset. */
+				if(fseek(in, p_headers[i].p_offset, SEEK_SET))
+					die("failed to seek to overlay %d data\n", ovl_id);
+
+				/* Write file image. */
+				fseek(fNDS, cur_offset, SEEK_SET);
+				ElfWriteData(p_headers[i].p_filesz, in, fNDS);
+			}
+		} else
+			die("too many overlay PHDRs\n");
+
+		cur_offset += cur_size;
+		cur_offset = (cur_offset + 0x1ff) &~ 0x1ff;
+
+		ovl_id ++;
+	}
+
+	if (ovl_table) {
+		fseek(fNDS, table_offset, SEEK_SET);
+		fwrite(ovl_table, sizeof(OvlTableEntry), num_ovls, fNDS);
+		fseek(fNDS, cur_offset, SEEK_SET);
+	}
+
+	/* Clean up. */
+	free(ovl_table);
+	free(p_headers);
+	fclose(in);
 }

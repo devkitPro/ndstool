@@ -442,8 +442,9 @@ void Create()
 		}
 
 		unsigned int size = 0;
+		bool has_overlays = false;
 		if (is_arm9_elf)
-			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, NULL, false);
+			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, NULL, &has_overlays, false);
 		else
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
@@ -458,16 +459,19 @@ void Create()
 			fseek(fNDS, needed_padding-1, SEEK_CUR);
 			fputc(0, fNDS);
 		}
+
+		// Copy overlays if needed
+		if (has_overlays)
+		{
+			if (arm9ovltablefilename) { fprintf(stderr, "cannot specify both ARM9 ELF overlay sections and external overlay table\n"); exit(1); }
+			CopyOverlaysFromElf(arm9filename, true);
+		}
 	}
 
 	// ARM9 overlay table
 	if (arm9ovltablefilename)
 	{
-		unsigned_int x1 = 0xDEC00621; fwrite(&x1, sizeof(x1), 1, fNDS);		// 0x2106c0de magic
-		unsigned_int x2 = 0x00000AD8; fwrite(&x2, sizeof(x2), 1, fNDS);		// ???
-		unsigned_int x3 = 0x00000000; fwrite(&x3, sizeof(x3), 1, fNDS);		// ???
-
-		header.arm9_overlay_offset = ftell(fNDS);		// do not align
+		header.arm9_overlay_offset = (ftell(fNDS) + file_align) &~ file_align;
 		fseek(fNDS, header.arm9_overlay_offset, SEEK_SET);
 		unsigned int size = 0;
 		CopyFromBin(arm9ovltablefilename, &size);
@@ -476,8 +480,8 @@ void Create()
 		if (!size) header.arm9_overlay_offset = 0;
 	}
 
-	// COULD BE HERE: ARM9 overlay files, no padding before or between. end is padded with 0xFF's and then followed by ARM7 binary
-	// fseek(fNDS, 1388772, SEEK_CUR);		// test for ASME
+	// SHOULD BE HERE: manually added ARM9 overlay files. each file is padded with 0xFF's
+	//
 
 	// ARM7 binary
 	header.arm7_rom_offset = std::max( (ftell(fNDS) + arm7_align) &~ arm7_align, arm7_min);
@@ -492,21 +496,29 @@ void Create()
 		if (!ram_address) { ram_address = entry_address = 0x037f8000; }
 
 		unsigned int size = 0;
+		bool has_overlays = false;
 
 		if (is_arm7_elf)
-			CopyFromElf(arm7filename, &entry_address, &ram_address, &size, NULL, false);
+			CopyFromElf(arm7filename, &entry_address, &ram_address, &size, NULL, &has_overlays, false);
 		else
 			CopyFromBin(arm7filename, &size);
 
 		header.arm7_entry_address = entry_address;
 		header.arm7_ram_address = ram_address;
 		header.arm7_size = ((size + 3) &~ 3);
+
+		// Copy overlays if needed
+		if (has_overlays)
+		{
+			if (arm7ovltablefilename) { fprintf(stderr, "cannot specify both ARM9 ELF overlay sections and external overlay table\n"); exit(1); }
+			CopyOverlaysFromElf(arm7filename, false);
+		}
 	}
 
 	// ARM7 overlay table
 	if (arm7ovltablefilename)
 	{
-		header.arm7_overlay_offset = ftell(fNDS);		// do not align
+		header.arm7_overlay_offset = (ftell(fNDS) + arm7_align) &~ arm7_align;
 		fseek(fNDS, header.arm7_overlay_offset, SEEK_SET);
 		unsigned int size = 0;
 		CopyFromBin(arm7ovltablefilename, &size);
@@ -515,14 +527,19 @@ void Create()
 		if (!size) header.arm7_overlay_offset = 0;
 	}
 
-	// COULD BE HERE: probably ARM7 overlay files, just like for ARM9
+	// SHOULD BE HERE: manually added ARM7 overlay files, just like for ARM9
 	//
 
-	if (overlay_files && !overlaydir)
+	if (overlay_files)
 	{
-		fprintf(stderr, "Overlay directory required!.\n");
-		exit(1);
+		if (!overlaydir)
+		{
+			fprintf(stderr, "Overlay directory required!.\n");
+			exit(1);
+		}
 	}
+	else
+		overlay_files = overlay_fat_entries.size();
 
 	// filesystem
 	//if (filerootdir || overlaydir)
@@ -587,6 +604,12 @@ void Create()
 		file_end = file_top;	// no file data as yet
 
 		// add (hidden) overlay files
+		if (overlay_fat_entries.size())
+		{
+			fseek(fNDS, header.fat_offset, SEEK_SET);
+			fwrite(overlay_fat_entries.data(), 8, overlay_fat_entries.size(), fNDS);
+		}
+		else
 		for (unsigned int i=0; i<overlay_files; i++)
 		{
 			char s[32]; sprintf(s, OVERLAY_FMT, i/*free_file_id*/);
@@ -629,7 +652,7 @@ void Create()
 
 			unsigned int ram_address = 0;
 			unsigned int size = 0;
-			CopyFromElf(arm9filename, NULL, &ram_address, &size, NULL, true);
+			CopyFromElf(arm9filename, NULL, &ram_address, &size, NULL, NULL, true);
 			if (!size)
 			{
 				sections--;
@@ -652,7 +675,7 @@ void Create()
 
 			unsigned int ram_address = 0;
 			unsigned int size = 0;
-			CopyFromElf(arm7filename, NULL, &ram_address, &size, &mbkArm7WramMapAddress, true);
+			CopyFromElf(arm7filename, NULL, &ram_address, &size, &mbkArm7WramMapAddress, NULL, true);
 			if (!size)
 			{
 				sections--;

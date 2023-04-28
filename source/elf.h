@@ -152,12 +152,14 @@ typedef enum
 } ELF_P_FLAG;
 
 /* Function prototypes. */
-int  CopyFromElf(char *elfFilename, 
+int  CopyFromElf(char *elfFilename,
                  unsigned int *entry,
                  unsigned int *ram_address,
                  unsigned int *size,
                  unsigned int *wram_address,
+                 bool *has_overlays,
                  bool is_twl);
+void CopyOverlaysFromElf(const char* elfFilename, bool is_arm9);
 void ElfReadHdr(FILE *fp, Elf32_Ehdr *hdr, Elf32_Phdr **phdr);
 void ElfWriteData(size_t n, FILE *in, FILE *out);
 void ElfWriteZeros(size_t n, FILE *fp);
