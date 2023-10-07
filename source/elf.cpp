@@ -149,6 +149,7 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 	Elf32_Phdr  *p_headers;
 	unsigned int i;
 	unsigned int expected_address = 0;
+	bool found_entry = false;
 
 	*ram_address = 0;
 	if (has_overlays) *has_overlays = false;
@@ -160,8 +161,7 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 
 	/* Read in header. */
 	ElfReadHdr(in, &header, &p_headers);
-  
-	if(entry) *entry = header.e_entry;
+
 	*size  = 0;
   	/* Iterate over each program header. */
 	for(i = 0; i < header.e_phnum; i++) {
@@ -173,6 +173,15 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		if(p_headers[i].p_flags&0x200000) {
 			if (has_overlays) *has_overlays = true;
 			continue;
+		}
+
+		/* Check if the entrypoint is in this segment. */
+		if (entry && !found_entry &&
+			header.e_entry >= p_headers[i].p_vaddr && header.e_entry <= (p_headers[i].p_vaddr + p_headers[i].p_filesz - 1))
+		{
+			/* Convert entrypoint vaddr into paddr. */
+			found_entry = true;
+			*entry = header.e_entry - p_headers[i].p_vaddr + p_headers[i].p_paddr;
 		}
 
 		/* Skip non-TWL/non-NTR sections. */
@@ -204,7 +213,12 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		*size += p_headers[i].p_filesz;
 		expected_address = p_headers[i].p_paddr + p_headers[i].p_filesz;
 	}
-  
+
+	/* If above didn't convert entrypoint vaddr into paddr, just use the given vaddr. */
+	if (entry && !found_entry) {
+		*entry = header.e_entry;
+	}
+
 	/* Clean up. */
 	free(p_headers);
 	fclose(in);
