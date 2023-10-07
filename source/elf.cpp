@@ -43,7 +43,6 @@ struct OvlTableEntry {
 };
 
 struct OvlTableEntryShort {
-	unsigned_int bss_size;
 	unsigned_int ctors_start;
 	unsigned_int ctors_end;
 	unsigned_int reserved;
@@ -263,7 +262,6 @@ void CopyOverlaysFromElf(const char* elfFilename, bool is_arm9)
 
 			for (unsigned j = 0; j < num_ovls; j ++) {
 				ovl_table[j].overlay_id = j;
-				ovl_table[j].bss_size = tbl_short[j].bss_size;
 				ovl_table[j].ctors_start = tbl_short[j].ctors_start;
 				ovl_table[j].ctors_end = tbl_short[j].ctors_end;
 				ovl_table[j].reserved = tbl_short[j].reserved;
@@ -283,6 +281,7 @@ void CopyOverlaysFromElf(const char* elfFilename, bool is_arm9)
 		} else if (ovl_id < num_ovls) {
 			ovl_table[ovl_id].ram_address = p_headers[i].p_vaddr;
 			ovl_table[ovl_id].load_size = p_headers[i].p_filesz;
+			ovl_table[ovl_id].bss_size = p_headers[i].p_memsz - p_headers[i].p_filesz;
 
 			if (p_headers[i].p_filesz) {
 				/* Add FAT entry */
