@@ -158,6 +158,7 @@ int  CopyFromElf(char *elfFilename,
                  unsigned int *size,
                  unsigned int *wram_address,
                  bool *has_overlays,
+                 bool is_arm9,
                  bool is_twl);
 void CopyOverlaysFromElf(const char* elfFilename, bool is_arm9);
 void ElfReadHdr(FILE *fp, Elf32_Ehdr *hdr, Elf32_Phdr **phdr);

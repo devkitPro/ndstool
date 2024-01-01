@@ -57,6 +57,7 @@ unsigned int scfgExtMask = 0x80040407; // enable access to everything
 unsigned int accessControl = 0x00000138;
 unsigned int mbkArm7WramMapAddress = 0;
 unsigned int appFlags = 0x01;
+unsigned int deviceListRamAddress = 0x03800000;
 
 
 /*

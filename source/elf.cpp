@@ -137,12 +137,13 @@ void ElfReadHdr(FILE *fp, Elf32_Ehdr *hdr, Elf32_Phdr **phdr) {
  *              unsigned int *size,        a pointer to place the data size at.
  *              unsigned int *wram_address,a pointer to map DSi exclusive ARM7 WRAM at.
  *              bool *has_overlays,        a pointer to place the "has overlays" flag at.
+ *              bool is_arm9,              true if this is the arm9 binary.
  *              bool is_twl,               true if we want to copy TWL sections.
  */
 int CopyFromElf(char *elfFilename,         unsigned int *entry,
                 unsigned int *ram_address, unsigned int *size,
                 unsigned int *wram_address, bool *has_overlays,
-                bool is_twl)
+                bool is_arm9, bool is_twl)
 {
 	FILE        *in;
 	Elf32_Ehdr   header;
@@ -191,6 +192,14 @@ int CopyFromElf(char *elfFilename,         unsigned int *entry,
 		/* Detect address of DSi exclusive ARM7 WRAM bank. */
 		if(wram_address && !*wram_address && p_headers[i].p_vaddr >= 0x03000000 && p_headers[i].p_vaddr < 0x037F8000)
 			*wram_address = p_headers[i].p_vaddr;
+
+		/* Automatically choose load address of DSi device list (right after all ARM7 WRAM segments). */
+		if(!is_arm9 && !is_twl) {
+			unsigned int end_address = (p_headers[i].p_vaddr + p_headers[i].p_memsz + 3) &~ 3;
+			if (end_address > deviceListRamAddress && end_address + 0x400 <= 0x0380F000) {
+				deviceListRamAddress = end_address;
+			}
+		}
 
 		/* Skip BSS segments. */
 		if(!p_headers[i].p_filesz)

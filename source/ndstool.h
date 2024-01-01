@@ -64,6 +64,7 @@ extern unsigned int scfgExtMask;
 extern unsigned int accessControl;
 extern unsigned int appFlags;
 extern unsigned int mbkArm7WramMapAddress;
+extern unsigned int deviceListRamAddress;
 extern char *title;
 extern char *makercode;
 extern char *gamecode;

@@ -444,7 +444,7 @@ void Create()
 		unsigned int size = 0;
 		bool has_overlays = false;
 		if (is_arm9_elf)
-			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, NULL, &has_overlays, false);
+			CopyFromElf(arm9filename, &entry_address, &ram_address, &size, NULL, &has_overlays, true, false);
 		else
 			CopyFromBin(arm9filename, 0, &size);
 		header.arm9_entry_address = entry_address;
@@ -499,7 +499,7 @@ void Create()
 		bool has_overlays = false;
 
 		if (is_arm7_elf)
-			CopyFromElf(arm7filename, &entry_address, &ram_address, &size, NULL, &has_overlays, false);
+			CopyFromElf(arm7filename, &entry_address, &ram_address, &size, NULL, &has_overlays, false, false);
 		else
 			CopyFromBin(arm7filename, &size);
 
@@ -652,7 +652,7 @@ void Create()
 
 			unsigned int ram_address = 0;
 			unsigned int size = 0;
-			CopyFromElf(arm9filename, NULL, &ram_address, &size, NULL, NULL, true);
+			CopyFromElf(arm9filename, NULL, &ram_address, &size, NULL, NULL, true, true);
 			if (!size)
 			{
 				sections--;
@@ -675,7 +675,7 @@ void Create()
 
 			unsigned int ram_address = 0;
 			unsigned int size = 0;
-			CopyFromElf(arm7filename, NULL, &ram_address, &size, &mbkArm7WramMapAddress, NULL, true);
+			CopyFromElf(arm7filename, NULL, &ram_address, &size, &mbkArm7WramMapAddress, NULL, false, true);
 			if (!size)
 			{
 				sections--;
@@ -771,7 +771,7 @@ void Create()
 		header.access_control = accessControl;
 		header.scfg_ext_mask = scfgExtMask;
 		header.appflags = appFlags;
-		header.device_list_ram_address = 0x02FFDC00;
+		header.device_list_ram_address = deviceListRamAddress;
 		header.offset_0x20C = 0x00010000;
 		header.tid_low  = header.gamecode[3] | (header.gamecode[2]<<8) | (header.gamecode[1]<<16) | (header.gamecode[0]<<24);
 		header.tid_high = titleidHigh;
