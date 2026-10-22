@@ -35,6 +35,7 @@ char *bannertext = 0;
 unsigned int bannersize = 0x840;
 //bool compatibility = false;
 char *headerfilename_or_size = 0;
+char *mbkfilename = 0;
 //char *uniquefilename = 0;
 char *logofilename = 0;
 char *title = 0;
@@ -129,7 +130,8 @@ HelpLine helplines[] =
 	{"z",   "  ARM7 SCFG EXT mask\n-z scfgmask (32-bit hex)"},
 	{"a",   "  DSi access flags\n-a accessflags (32-bit hex)"},
 	{"p",   "  DSi application flags\n-p appflags (8-bit hex)"},
-	{"q",   "  DSi ARM7 WRAM_A map address\n-m address (32-bit hex)"},
+	{"q",   "  DSi ARM7 WRAM_A map address\n-q address (32-bit hex)"},
+	{"M",   "  DSi WRAM/MBK settings\n-M file.bin\n0x30 bytes, as at header 0x180: MBK1-5,\nARM9 MBK6-8, ARM7 MBK6-8, MBK9/WRAMCNT.\nCannot be combined with -q."},
 };
 
 /*
@@ -338,6 +340,10 @@ int main(int argc, char *argv[])
 				case 'q': // DSi ARM7 WRAM_A map address
 					if (argc > a)
 						mbkArm7WramMapAddress = strtoul(argv[++a], 0, 16);
+					break;
+
+				case 'M': // DSi WRAM/MBK settings file
+					REQUIRED(mbkfilename);
 					break;
 
 				case 'v':	// verbose
